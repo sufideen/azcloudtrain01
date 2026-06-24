@@ -1,7 +1,7 @@
 /*
   Application Gateway v2 with WAF (OWASP 3.2)
-  Listens on HTTP(80) → redirects to HTTPS(443)
-  WAF in Prevention mode for prod, Detection for dev/test
+  HTTP(80) listener redirects permanently to HTTPS(443) listener.
+  WAF in Prevention mode for prod, Detection for dev/test.
 */
 param location string
 param environment string
@@ -9,14 +9,11 @@ param namePrefix string
 param tags object
 param appGatewaySubnetId string
 
-var appGwName   = 'agw-${namePrefix}-${environment}'
-var pipName     = 'pip-agw-${namePrefix}-${environment}'
+var appGwName     = 'agw-${namePrefix}-${environment}'
+var pipName       = 'pip-agw-${namePrefix}-${environment}'
 var wafPolicyName = 'waf-${namePrefix}-${environment}'
 
-// WAF Prevention mode for prod only
-var wafMode = environment == 'prod' ? 'Prevention' : 'Detection'
-
-// SKU capacity: prod=2 (HA), dev/test=1
+var wafMode  = environment == 'prod' ? 'Prevention' : 'Detection'
 var capacity = environment == 'prod' ? 2 : 1
 
 resource publicIp 'Microsoft.Network/publicIPAddresses@2023-09-01' = {
@@ -44,14 +41,8 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
     }
     managedRules: {
       managedRuleSets: [
-        {
-          ruleSetType: 'OWASP'
-          ruleSetVersion: '3.2'
-        }
-        {
-          ruleSetType: 'Microsoft_BotManagerRuleSet'
-          ruleSetVersion: '1.0'
-        }
+        { ruleSetType: 'OWASP',                    ruleSetVersion: '3.2' }
+        { ruleSetType: 'Microsoft_BotManagerRuleSet', ruleSetVersion: '1.0' }
       ]
     }
     customRules: [
@@ -104,7 +95,7 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-09-01' = {
       }
     ]
     frontendPorts: [
-      { name: 'port-80',  properties: { port: 80 } }
+      { name: 'port-80',  properties: { port: 80  } }
       { name: 'port-443', properties: { port: 443 } }
     ]
     backendAddressPools: [
@@ -112,10 +103,10 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-09-01' = {
     ]
     backendHttpSettingsCollection: [
       {
-        name: 'httpSettings'
+        name: 'httpsSettings'
         properties: {
-          port: 80
-          protocol: 'Http'
+          port: 443
+          protocol: 'Https'
           cookieBasedAffinity: 'Disabled'
           requestTimeout: 30
           probe: { id: resourceId('Microsoft.Network/applicationGateways/probes', appGwName, 'healthProbe') }
@@ -126,7 +117,7 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-09-01' = {
       {
         name: 'healthProbe'
         properties: {
-          protocol: 'Http'
+          protocol: 'Https'
           host: '127.0.0.1'
           path: '/health'
           interval: 30
@@ -140,11 +131,22 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-09-01' = {
     ]
     httpListeners: [
       {
+        // Port 80 listener — redirects to HTTPS
         name: 'httpListener'
         properties: {
           frontendIPConfiguration: { id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'appGwFrontendIp') }
           frontendPort: { id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'port-80') }
           protocol: 'Http'
+        }
+      }
+      {
+        // Port 443 listener — the redirect TARGET
+        name: 'httpsListener'
+        properties: {
+          frontendIPConfiguration: { id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'appGwFrontendIp') }
+          frontendPort: { id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'port-443') }
+          protocol: 'Https'
+          // sslCertificate must be provided before prod; omitted here for initial infra deploy
         }
       }
     ]
@@ -153,7 +155,8 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-09-01' = {
         name: 'httpToHttps'
         properties: {
           redirectType: 'Permanent'
-          targetListener: { id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpListener') }
+          // Target is the HTTPS listener, NOT the HTTP listener
+          targetListener: { id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpsListener') }
           includePath: true
           includeQueryString: true
         }
@@ -161,12 +164,24 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-09-01' = {
     ]
     requestRoutingRules: [
       {
+        // HTTP traffic → redirect to HTTPS
         name: 'httpRedirectRule'
         properties: {
           ruleType: 'Basic'
           priority: 100
           httpListener: { id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpListener') }
           redirectConfiguration: { id: resourceId('Microsoft.Network/applicationGateways/redirectConfigurations', appGwName, 'httpToHttps') }
+        }
+      }
+      {
+        // HTTPS traffic → backend pool
+        name: 'httpsRoutingRule'
+        properties: {
+          ruleType: 'Basic'
+          priority: 200
+          httpListener: { id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpsListener') }
+          backendAddressPool: { id: resourceId('Microsoft.Network/applicationGateways/backendAddressPools', appGwName, 'webBackendPool') }
+          backendHttpSettings: { id: resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', appGwName, 'httpsSettings') }
         }
       }
     ]
