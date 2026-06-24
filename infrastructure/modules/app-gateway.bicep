@@ -76,12 +76,6 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-09-01' = {
       tier: 'WAF_v2'
       capacity: capacity
     }
-    webApplicationFirewallConfiguration: {
-      enabled: true
-      firewallMode: wafMode
-      ruleSetType: 'OWASP'
-      ruleSetVersion: '3.2'
-    }
     firewallPolicy: { id: wafPolicy.id }
     gatewayIPConfigurations: [
       {
