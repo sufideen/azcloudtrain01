@@ -1,0 +1,121 @@
+name: Deploy Hub-Spoke Infrastructure
+
+on:
+  push:
+    branches: [main]
+    paths: ['infrastructure/**']
+  pull_request:
+    branches: [main]
+    paths: ['infrastructure/**']
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options: [dev, test, prod]
+
+permissions:
+  id-token: write   # OIDC login to Azure
+  contents: read
+
+jobs:
+  # ── Validate (runs on every PR and push) ──────────────────────────────────
+  validate:
+    name: Validate Bicep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Bicep build (lint)
+        run: az bicep build --file infrastructure/main.bicep
+
+      - name: What-if — dev
+        run: |
+          az deployment sub what-if \
+            --location eastus \
+            --template-file infrastructure/main.bicep \
+            --parameters infrastructure/parameters/dev.bicepparam
+
+  # ── Deploy DEV (on push to main) ──────────────────────────────────────────
+  deploy-dev:
+    name: Deploy → dev
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: dev
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to dev
+        run: |
+          az deployment sub create \
+            --name hub-spoke-dev-${{ github.run_number }} \
+            --location eastus \
+            --template-file infrastructure/main.bicep \
+            --parameters infrastructure/parameters/dev.bicepparam
+
+  # ── Deploy TEST (manual gate) ──────────────────────────────────────────────
+  deploy-test:
+    name: Deploy → test
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: test          # requires manual approval in GitHub Environments
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'test')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to test
+        run: |
+          az deployment sub create \
+            --name hub-spoke-test-${{ github.run_number }} \
+            --location eastus \
+            --template-file infrastructure/main.bicep \
+            --parameters infrastructure/parameters/test.bicepparam
+
+  # ── Deploy PROD (manual gate) ──────────────────────────────────────────────
+  deploy-prod:
+    name: Deploy → prod
+    needs: deploy-test
+    runs-on: ubuntu-latest
+    environment: prod          # requires manual approval in GitHub Environments
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to prod
+        run: |
+          az deployment sub create \
+            --name hub-spoke-prod-${{ github.run_number }} \
+            --location eastus \
+            --template-file infrastructure/main.bicep \
+            --parameters infrastructure/parameters/prod.bicepparam
