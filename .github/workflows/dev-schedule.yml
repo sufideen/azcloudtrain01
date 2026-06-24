@@ -1,0 +1,103 @@
+name: Dev Environment — Auto Shutdown & Start
+
+on:
+  schedule:
+    - cron: '0 18 * * 1-5'   # Shutdown: 6:00pm UTC Mon–Fri
+    - cron: '0 7  * * 1-5'   # Start:    7:00am UTC Mon–Fri
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - stop
+          - start
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  manage-dev:
+    name: ${{ github.event.schedule == '0 18 * * 1-5' && 'Shutdown dev' || github.event.schedule == '0 7 * * 1-5' && 'Start dev' || format('{0} dev', inputs.action) }}
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # ── Determine action ──────────────────────────────────────────────────
+      - name: Set action variable
+        id: action
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            MINUTE=$(echo "${{ github.event.schedule }}" | awk '{print $1}')
+            HOUR=$(echo "${{ github.event.schedule }}"   | awk '{print $2}')
+            if [[ "$HOUR" == "18" ]]; then
+              echo "action=stop" >> $GITHUB_OUTPUT
+            else
+              echo "action=start" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "action=${{ inputs.action }}" >> $GITHUB_OUTPUT
+          fi
+
+      # ── App Gateway ───────────────────────────────────────────────────────
+      - name: Stop App Gateway
+        if: steps.action.outputs.action == 'stop'
+        run: |
+          echo "Stopping App Gateway..."
+          az network application-gateway stop \
+            --name agw-contoso-dev \
+            --resource-group rg-contoso-hub-dev
+          echo "App Gateway stopped."
+
+      - name: Start App Gateway
+        if: steps.action.outputs.action == 'start'
+        run: |
+          echo "Starting App Gateway..."
+          az network application-gateway start \
+            --name agw-contoso-dev \
+            --resource-group rg-contoso-hub-dev
+          echo "App Gateway started."
+
+      # ── VMs in spoke (uncomment when Phase 2 VMs are deployed) ───────────
+      # - name: Stop VMs
+      #   if: steps.action.outputs.action == 'stop'
+      #   run: |
+      #     az vm deallocate \
+      #       --name vm-admin-dev \
+      #       --resource-group rg-contoso-spoke-dev --no-wait
+      #     az vm deallocate \
+      #       --name vm-web-dev \
+      #       --resource-group rg-contoso-spoke-dev --no-wait
+
+      # - name: Start VMs
+      #   if: steps.action.outputs.action == 'start'
+      #   run: |
+      #     az vm start \
+      #       --name vm-admin-dev \
+      #       --resource-group rg-contoso-spoke-dev --no-wait
+      #     az vm start \
+      #       --name vm-web-dev \
+      #       --resource-group rg-contoso-spoke-dev --no-wait
+
+      # ── Summary ───────────────────────────────────────────────────────────
+      - name: Report status
+        run: |
+          STATUS=$(az network application-gateway show \
+            --name agw-contoso-dev \
+            --resource-group rg-contoso-hub-dev \
+            --query "operationalState" -o tsv)
+          echo "### Dev Environment Status" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource | State |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| App Gateway (agw-contoso-dev) | $STATUS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Action performed | ${{ steps.action.outputs.action }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Time (UTC) | $(date -u) |" >> $GITHUB_STEP_SUMMARY
