@@ -1,7 +1,7 @@
 # Azure Hub-and-Spoke Network — IaC with Bicep & GitHub Actions CI/CD
 
 > **A real-world infrastructure deployment showcase**
-> Co-authored by **Sufideen Mawara** · [github.com/sufideen](https://github.com/sufideen)
+> Co-authored by **Sufyan Gabisi aka sufideen** · [github.com/sufideen](https://github.com/sufideen)
 
 ---
 
