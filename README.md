@@ -280,7 +280,7 @@ Azure ARM deployments at subscription scope are named. Re-running with the same 
 
 ## About the Co-Author
 
-**Sufideen Mawara** is a cloud and infrastructure engineer specialising in Azure architecture, Infrastructure as Code, and DevSecOps. This project is a complete end-to-end example of how enterprise-grade infrastructure is designed, secured, and automated — from a blank subscription to nine fully deployed resource groups across three environments, driven entirely by code and a CI/CD pipeline.
+**Sufyan Gabisi aka sufideen** is a cloud and infrastructure engineer specialising in Azure architecture, Infrastructure as Code, and DevSecOps. This project is a complete end-to-end example of how enterprise-grade infrastructure is designed, secured, and automated — from a blank subscription to nine fully deployed resource groups across three environments, driven entirely by code and a CI/CD pipeline.
 
 Available for cloud consulting, architecture reviews, and IaC delivery engagements.
 
