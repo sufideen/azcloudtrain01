@@ -1,5 +1,14 @@
 # Hub-and-Spoke Network Architecture
 
+## Architecture Diagram
+
+![Hub-and-Spoke Architecture Diagram](architecture-diagram.svg)
+
+> Download the diagram: [architecture-diagram.svg](architecture-diagram.svg)
+> Open the `.svg` file in any browser, Inkscape, or import into Visio / draw.io / Lucidchart for further editing.
+
+---
+
 ## Project Showcase
 
 Screenshots taken from the live Azure environment before teardown.
