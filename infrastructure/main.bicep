@@ -142,6 +142,6 @@ module coreKeyVault './modules/key-vault.bicep' = {
   scope: hubRg // Targets the Hub Resource Group declared on line 31
   params: {
     location: location
-    vaultName: 'kv-alz-${environment}-core' // Correctly references the environment parameter from line 25
+    vaultName: 'kv-alz-${environment}-${uniqueString(hubRg.id)}'
   }
 }
