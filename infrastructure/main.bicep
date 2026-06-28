@@ -135,3 +135,13 @@ output hubVnetId string = hub.outputs.vnetId
 output spokeVnetId string = spoke.outputs.vnetId
 output appGatewayPublicIp string = appGateway.outputs.publicIpAddress
 output storageAccountName string = storage.outputs.accountName
+
+// Instantiate the centralized environment Key Vault
+module coreKeyVault './modules/key-vault.bicep' = {
+  name: 'deploy-core-key-vault-${uniqueString(hubRg.id)}'
+  scope: hubRg // Targets the Hub Resource Group declared on line 31
+  params: {
+    location: location
+    vaultName: 'kv-alz-${environment}-core' // Correctly references the environment parameter from line 25
+  }
+}
