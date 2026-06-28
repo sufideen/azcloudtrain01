@@ -37,7 +37,10 @@ resource hubVnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
       {
         name: 'AzureBastionSubnet'
         properties: { addressPrefix: bastionSubnet }
+
       }
+
+
     ]
   }
 }
@@ -46,3 +49,10 @@ output vnetId string = hubVnet.id
 output vnetName string = hubVnet.name
 output appGatewaySubnetId string = resourceId('Microsoft.Network/virtualNetworks/subnets', hubName, 'AppGatewaySubnet')
 output bastionSubnetId string = resourceId('Microsoft.Network/virtualNetworks/subnets', hubName, 'AzureBastionSubnet')
+module hubFirewall './firewall.bicep' = {
+  name: 'deploy-hub-firewall'
+  params: {
+    location: resourceGroup().location
+    hubVnetId: hubVnet.id
+  }
+
