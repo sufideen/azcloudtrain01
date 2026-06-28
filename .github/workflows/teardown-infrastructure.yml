@@ -70,10 +70,135 @@ jobs:
           echo "proceed=true" >> $GITHUB_OUTPUT
           echo "✅ Safety check passed for environment: $ENV"
 
+  # ── Capture assets for ALL targeted environments (runs before any deletion) ──
+  capture-assets:
+    name: Capture Assets
+    needs: safety-check
+    if: needs.safety-check.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (for IaC source snapshot)
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Capture resources, ARM exports, network topology and costs
+        env:
+          ENV_INPUT: ${{ github.event.inputs.environment || 'dev' }}
+          NAME_PREFIX: ${{ env.NAME_PREFIX }}
+        run: |
+          set -euo pipefail
+          TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
+          BASE="teardown-assets/${TIMESTAMP}"
+
+          capture_env() {
+            local env="$1"
+            local out="${BASE}/${env}"
+            mkdir -p "$out"
+
+            echo "──── Capturing: ${env} ────"
+            local rgs=(
+              "rg-${NAME_PREFIX}-hub-${env}"
+              "rg-${NAME_PREFIX}-spoke-${env}"
+              "rg-${NAME_PREFIX}-storage-${env}"
+            )
+
+            for rg in "${rgs[@]}"; do
+              if az group exists --name "$rg" | grep -q true; then
+                echo "  Resource list → $rg"
+                az resource list --resource-group "$rg" \
+                  --query "[].{name:name,type:type,location:location,sku:sku.name}" \
+                  -o table > "${out}/${rg}-resources.txt" 2>/dev/null || true
+
+                echo "  ARM export   → $rg"
+                az group export --name "$rg" --include-parameter-default-value \
+                  -o json > "${out}/${rg}-arm-export.json" 2>/dev/null || \
+                  echo "    ARM export skipped (unsupported type in $rg)"
+
+                START=$(date -u -d '30 days ago' +%Y-%m-%d)
+                END=$(date -u +%Y-%m-%d)
+                SUB=$(az account show --query id -o tsv)
+                echo "  Cost data    → $rg"
+                az consumption usage list \
+                  --start-date "$START" --end-date "$END" \
+                  --scope "/subscriptions/${SUB}/resourceGroups/$rg" \
+                  --query "[].{date:usageStart,resource:instanceName,cost:pretaxCost,currency:currency}" \
+                  -o table > "${out}/${rg}-cost.txt" 2>/dev/null || \
+                  echo "    Cost data unavailable (requires Billing Reader role)"
+              else
+                echo "  Skipped (not found): $rg"
+              fi
+            done
+
+            local hub_rg="rg-${NAME_PREFIX}-hub-${env}"
+            if az group exists --name "$hub_rg" | grep -q true; then
+              echo "  Network topology → ${env}"
+              az network watcher show-topology \
+                --resource-group "$hub_rg" \
+                -o json > "${out}/network-topology.json" 2>/dev/null || true
+
+              local appgw="agw-${NAME_PREFIX}-${env}"
+              if az network application-gateway show \
+                   --name "$appgw" --resource-group "$hub_rg" &>/dev/null; then
+                echo "  App Gateway config → ${appgw}"
+                az network application-gateway show \
+                  --name "$appgw" --resource-group "$hub_rg" \
+                  -o json > "${out}/app-gateway.json" 2>/dev/null || true
+              fi
+            fi
+
+            echo "  ✅ Done: ${env}"
+          }
+
+          case "$ENV_INPUT" in
+            dev)  capture_env dev ;;
+            test) capture_env test ;;
+            prod) capture_env prod ;;
+            all)
+              capture_env dev
+              capture_env test
+              capture_env prod
+              ;;
+          esac
+
+          # Copy IaC source into the bundle so the artifact is self-contained
+          cp -r infrastructure "${BASE}/iac-source"
+
+          echo "ASSET_DIR=${BASE}" >> $GITHUB_ENV
+          echo "Captured assets in ${BASE}/"
+          find "$BASE" -type f | sort
+
+      - name: Upload asset bundle as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teardown-assets-${{ github.run_id }}
+          path: teardown-assets/
+          retention-days: 90
+
+      - name: Write capture summary
+        run: |
+          echo "## Asset Capture" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Artifact **teardown-assets-${{ github.run_id }}** uploaded (retained 90 days)." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Description |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| \`*-resources.txt\` | Full resource list per RG |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`*-arm-export.json\` | Deployed ARM state (redeployable) |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`network-topology.json\` | Hub VNet topology snapshot |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`app-gateway.json\` | WAF v2 config |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`*-cost.txt\` | Last 30-day cost breakdown |" >> $GITHUB_STEP_SUMMARY
+          echo "| \`iac-source/\` | Full Bicep IaC at time of teardown |" >> $GITHUB_STEP_SUMMARY
+
   # ── Teardown DEV ────────────────────────────────────────────────────────────
   teardown-dev:
     name: Teardown → dev
-    needs: safety-check
+    needs: [safety-check, capture-assets]
     if: |
       needs.safety-check.outputs.proceed == 'true' &&
       (github.event_name == 'schedule' ||
@@ -120,7 +245,7 @@ jobs:
   # ── Teardown TEST ───────────────────────────────────────────────────────────
   teardown-test:
     name: Teardown → test
-    needs: safety-check
+    needs: [safety-check, capture-assets]
     if: |
       needs.safety-check.outputs.proceed == 'true' &&
       (github.event.inputs.environment == 'test' ||
@@ -154,7 +279,7 @@ jobs:
   # ── Teardown PROD (requires GitHub Environment reviewer approval) ────────────
   teardown-prod:
     name: Teardown → prod
-    needs: safety-check
+    needs: [safety-check, capture-assets]
     if: |
       needs.safety-check.outputs.proceed == 'true' &&
       (github.event.inputs.environment == 'prod' ||
@@ -188,7 +313,7 @@ jobs:
   # ── Summary ─────────────────────────────────────────────────────────────────
   summary:
     name: Teardown Summary
-    needs: [teardown-dev, teardown-test, teardown-prod]
+    needs: [capture-assets, teardown-dev, teardown-test, teardown-prod]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -196,10 +321,14 @@ jobs:
         run: |
           echo "## Teardown Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Environment | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "| Step | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| dev  | ${{ needs.teardown-dev.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| test | ${{ needs.teardown-test.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| prod | ${{ needs.teardown-prod.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Asset capture | ${{ needs.capture-assets.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| dev teardown  | ${{ needs.teardown-dev.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| test teardown | ${{ needs.teardown-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| prod teardown | ${{ needs.teardown-prod.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifact:** teardown-assets-${{ github.run_id }} (90-day retention)" >> $GITHUB_STEP_SUMMARY
+          echo "Download from: Actions → this run → Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "To redeploy any environment: run **Deploy Hub-Spoke Infrastructure** workflow_dispatch." >> $GITHUB_STEP_SUMMARY
