@@ -1,0 +1,205 @@
+name: Teardown Hub-Spoke Infrastructure
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PURPOSE
+#   This workflow deletes all resource groups for a given environment.
+#   All infrastructure is 100% code-defined — deletion is safe and reversible.
+#   Re-running deploy-infrastructure.yml fully restores any torn-down environment.
+#
+# TRIGGERS
+#   1. Scheduled  — dev torn down automatically every weeknight at 22:00 UTC
+#   2. Manual     — workflow_dispatch lets you choose dev / test / prod / all
+#
+# SAFETY
+#   • prod requires a GitHub Environment reviewer approval before deletion runs
+#   • A confirmation string ('delete-prod') must be typed for prod
+#   • dev and test are torn down without approval (POC cost-saving)
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  # Nightly auto-teardown of dev — saves ~£1,058/month if redeployed each morning
+  schedule:
+    - cron: '0 22 * * 1-5'   # 22:00 UTC, Monday–Friday
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to tear down'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+          - all
+      confirm_prod:
+        description: 'Type "delete-prod" to confirm production teardown (ignored for dev/test)'
+        required: false
+        default: ''
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  NAME_PREFIX: contoso
+
+jobs:
+  # ── Guard: block prod teardown without explicit confirmation ────────────────
+  safety-check:
+    name: Safety Check
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+    steps:
+      - name: Validate prod confirmation
+        id: check
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          CONFIRM="${{ github.event.inputs.confirm_prod }}"
+
+          if [[ "$ENV" == "prod" || "$ENV" == "all" ]]; then
+            if [[ "$CONFIRM" != "delete-prod" ]]; then
+              echo "❌ Production teardown requires confirm_prod = 'delete-prod'"
+              echo "   You entered: '$CONFIRM'"
+              echo "proceed=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          fi
+          echo "proceed=true" >> $GITHUB_OUTPUT
+          echo "✅ Safety check passed for environment: $ENV"
+
+  # ── Teardown DEV ────────────────────────────────────────────────────────────
+  teardown-dev:
+    name: Teardown → dev
+    needs: safety-check
+    if: |
+      needs.safety-check.outputs.proceed == 'true' &&
+      (github.event_name == 'schedule' ||
+       github.event.inputs.environment == 'dev' ||
+       github.event.inputs.environment == 'all')
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Delete dev resource groups
+        run: |
+          echo "🗑️  Tearing down dev environment..."
+          for rg in \
+            rg-${{ env.NAME_PREFIX }}-hub-dev \
+            rg-${{ env.NAME_PREFIX }}-spoke-dev \
+            rg-${{ env.NAME_PREFIX }}-storage-dev; do
+            if az group exists --name "$rg" | grep -q true; then
+              echo "  Deleting: $rg"
+              az group delete --name "$rg" --yes --no-wait
+            else
+              echo "  Already gone: $rg"
+            fi
+          done
+          echo "⏳ Deletion submitted (async). Azure will complete within ~5 minutes."
+
+      - name: Verify deletion
+        run: |
+          echo "Waiting 60s before checking status..."
+          sleep 60
+          for rg in \
+            rg-${{ env.NAME_PREFIX }}-hub-dev \
+            rg-${{ env.NAME_PREFIX }}-spoke-dev \
+            rg-${{ env.NAME_PREFIX }}-storage-dev; do
+            STATE=$(az group show --name "$rg" --query properties.provisioningState -o tsv 2>/dev/null || echo 'Deleted')
+            echo "  $rg → $STATE"
+          done
+
+  # ── Teardown TEST ───────────────────────────────────────────────────────────
+  teardown-test:
+    name: Teardown → test
+    needs: safety-check
+    if: |
+      needs.safety-check.outputs.proceed == 'true' &&
+      (github.event.inputs.environment == 'test' ||
+       github.event.inputs.environment == 'all')
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Delete test resource groups
+        run: |
+          echo "🗑️  Tearing down test environment..."
+          for rg in \
+            rg-${{ env.NAME_PREFIX }}-hub-test \
+            rg-${{ env.NAME_PREFIX }}-spoke-test \
+            rg-${{ env.NAME_PREFIX }}-storage-test; do
+            if az group exists --name "$rg" | grep -q true; then
+              echo "  Deleting: $rg"
+              az group delete --name "$rg" --yes --no-wait
+            else
+              echo "  Already gone: $rg"
+            fi
+          done
+          echo "⏳ Deletion submitted (async)."
+
+  # ── Teardown PROD (requires GitHub Environment reviewer approval) ────────────
+  teardown-prod:
+    name: Teardown → prod
+    needs: safety-check
+    if: |
+      needs.safety-check.outputs.proceed == 'true' &&
+      (github.event.inputs.environment == 'prod' ||
+       github.event.inputs.environment == 'all')
+    runs-on: ubuntu-latest
+    environment: prod          # ← manual reviewer approval gate in GitHub Environments
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Delete prod resource groups
+        run: |
+          echo "🗑️  Tearing down PRODUCTION environment..."
+          for rg in \
+            rg-${{ env.NAME_PREFIX }}-hub-prod \
+            rg-${{ env.NAME_PREFIX }}-spoke-prod \
+            rg-${{ env.NAME_PREFIX }}-storage-prod; do
+            if az group exists --name "$rg" | grep -q true; then
+              echo "  Deleting: $rg"
+              az group delete --name "$rg" --yes --no-wait
+            else
+              echo "  Already gone: $rg"
+            fi
+          done
+          echo "⏳ Deletion submitted (async)."
+
+  # ── Summary ─────────────────────────────────────────────────────────────────
+  summary:
+    name: Teardown Summary
+    needs: [teardown-dev, teardown-test, teardown-prod]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print summary
+        run: |
+          echo "## Teardown Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| dev  | ${{ needs.teardown-dev.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| test | ${{ needs.teardown-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| prod | ${{ needs.teardown-prod.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To redeploy any environment: run **Deploy Hub-Spoke Infrastructure** workflow_dispatch." >> $GITHUB_STEP_SUMMARY
