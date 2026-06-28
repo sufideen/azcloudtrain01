@@ -56,3 +56,21 @@ module hubFirewall './firewall.bicep' = {
     hubVnetId: hubVnet.id
   }
 }
+
+// 1. Invoke the Egress Route Table Module
+module egressRouteTable './route-table.bicep' = {
+  name: 'deploy-hub-route-table'
+  params: {
+    location: location
+    firewallPrivateIp: hubFirewall.outputs.firewallPrivateIp
+  }
+}
+
+// 2. Invoke the Azure Bastion Module
+module hubBastion './bastion.bicep' = {
+  name: 'deploy-hub-bastion'
+  params: {
+    location: location
+    hubVnetId: hubVnet.id
+  }
+}
