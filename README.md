@@ -1,5 +1,7 @@
 # Azure Hub-and-Spoke Network — IaC with Bicep & GitHub Actions CI/CD
 
+[![Deploy Hub-Spoke Infrastructure](https://github.com/sufideen/azcloudtrain01/actions/workflows/deploy-infrastructure.yml/badge.svg)](https://github.com/sufideen/azcloudtrain01/actions/workflows/deploy-infrastructure.yml)
+
 > **A real-world infrastructure deployment showcase**
 > Co-authored by **Sufyan Gabisi aka sufideen** · [github.com/sufideen](https://github.com/sufideen)
 
