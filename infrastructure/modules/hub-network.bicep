@@ -55,4 +55,4 @@ module hubFirewall './firewall.bicep' = {
     location: resourceGroup().location
     hubVnetId: hubVnet.id
   }
-
+}

@@ -4,8 +4,7 @@ param location string = resourceGroup().location
 @description('The resource ID of the existing Hub Virtual Network.')
 param hubVnetId string
 
-@description('The subnet address space allocated to the AzureFirewallSubnet.')
-param firewallSubnetAddressPrefix string = '10.0.3.0/24'
+
 
 // 1. Centralized Firewall Policy to manage Network and Application rulesets
 resource firewallPolicy 'Microsoft.Network/firewallPolicies@2023-11-01' = {
