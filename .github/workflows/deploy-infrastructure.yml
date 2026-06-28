@@ -15,6 +15,10 @@ on:
         default: 'dev'
         type: choice
         options: [dev, test, prod]
+      confirm_prod:
+        description: 'Type CONFIRM to deploy to prod (ignored for dev/test)'
+        required: false
+        default: ''
 
 # Prevent concurrent deployments to the same environment — a second run
 # queues and waits rather than racing against an in-progress deployment.
@@ -119,7 +123,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'prod'
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'prod' && inputs.confirm_prod == 'CONFIRM'
     steps:
       - uses: actions/checkout@v4
 
