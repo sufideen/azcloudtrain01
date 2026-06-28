@@ -55,14 +55,14 @@ for ENV in dev test prod; do
     }" --output none
 done
 
-# Also add one for the main branch (used by the validate job)
-echo "==> Federated credential for branch: main"
+# Also add one for the master branch (used by the validate job)
+echo "==> Federated credential for branch: master"
 az ad app federated-credential create \
   --id "$OBJECT_ID" \
   --parameters "{
-    \"name\": \"github-${GITHUB_REPO}-main\",
+    \"name\": \"github-${GITHUB_REPO}-master\",
     \"issuer\": \"https://token.actions.githubusercontent.com\",
-    \"subject\": \"repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/main\",
+    \"subject\": \"repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/master\",
     \"audiences\": [\"api://AzureADTokenExchange\"]
   }" --output none
 
