@@ -1,0 +1,46 @@
+# Bicep / ARM
+*.parameters.json.bak
+.bicep/
+
+# Azure CLI
+.azure/
+
+# Terraform (if ever added)
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
+# Scripts — local secrets and generated cert material
+infrastructure/scripts/*.env
+infrastructure/scripts/*.pfx
+infrastructure/scripts/*.pem
+infrastructure/scripts/*.key
+infrastructure/scripts/*.crt
+infrastructure/scripts/*.p12
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains / Rider
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node (if tooling added)
+node_modules/
+package-lock.json
+
+# Python (if scripting added)
+__pycache__/
+*.pyc
+.venv/
+
+# Logs and temp
+*.log
+*.tmp
+*.bak
