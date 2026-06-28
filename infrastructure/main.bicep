@@ -9,7 +9,7 @@ targetScope = 'subscription'
 param environment string
 
 @description('Azure region for all resources')
-param location string = 'eastus'
+param location string = 'uksouth'
 
 @description('Spoke VNet address space (e.g. 10.1.0.0/16 for dev)')
 param spokeAddressPrefix string
