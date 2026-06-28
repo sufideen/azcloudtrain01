@@ -1,5 +1,50 @@
 # Hub-and-Spoke Network Architecture
 
+## Project Showcase
+
+Screenshots taken from the live Azure environment before teardown.
+
+### 1. All Resource Groups (9 total across dev / test / prod)
+![All resource groups](screenshots/01-resource-groups-overview.png)
+
+### 2. Hub Resource Group — prod
+![Hub RG prod](screenshots/02-hub-rg-prod.png)
+
+### 3. Spoke Resource Group — prod
+![Spoke RG prod](screenshots/03-spoke-rg-prod.png)
+
+### 4. Network Topology (hub-spoke peering)
+![Network topology](screenshots/04-network-topology.png)
+
+### 5. VNet Peerings
+![VNet peerings](screenshots/05-vnet-peerings.png)
+
+### 6. App Gateway Overview (WAF v2)
+![App Gateway overview](screenshots/06-app-gateway-overview.png)
+
+### 7. WAF Policy (OWASP 3.2, Prevention mode)
+![WAF policy](screenshots/07-app-gateway-waf.png)
+
+### 8. NSG Rules — nsg-web
+![NSG web rules](screenshots/08-nsg-web-rules.png)
+
+### 9. NSG Rules — nsg-data
+![NSG data rules](screenshots/09-nsg-data-rules.png)
+
+### 10. Azure Bastion
+![Bastion](screenshots/10-bastion.png)
+
+### 11. CI/CD Pipeline — full run (Validate → Dev → Test → Prod)
+![CI/CD pipeline run](screenshots/11-cicd-pipeline-run.png)
+
+### 12. Prod Approval Gate
+![Prod approval gate](screenshots/12-cicd-approval-gate.png)
+
+### 13. Cost Analysis by Resource Group
+![Cost analysis](screenshots/13-cost-analysis.png)
+
+---
+
 ## Overview
 
 ```
