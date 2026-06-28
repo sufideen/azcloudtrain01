@@ -21,7 +21,7 @@ permissions:
   contents: read
 
 jobs:
-  # ── Validate (runs on every PR and push) ──────────────────────────────────
+  # ── Validate (runs on every PR and push) ────────────────────────────────────────────
   validate:
     name: Validate Bicep
     runs-on: ubuntu-latest
@@ -41,11 +41,11 @@ jobs:
       - name: What-if — dev
         run: |
           az deployment sub what-if \
-            --location eastus \
+            --location uksouth \
             --template-file infrastructure/main.bicep \
             --parameters infrastructure/parameters/dev.bicepparam
 
-  # ── Deploy DEV (on push to main) ──────────────────────────────────────────
+  # ── Deploy DEV (on push to main) ────────────────────────────────────────────────
   deploy-dev:
     name: Deploy → dev
     needs: validate
@@ -66,11 +66,11 @@ jobs:
         run: |
           az deployment sub create \
             --name hub-spoke-dev-${{ github.run_number }} \
-            --location eastus \
+            --location uksouth \
             --template-file infrastructure/main.bicep \
             --parameters infrastructure/parameters/dev.bicepparam
 
-  # ── Deploy TEST (manual gate) ──────────────────────────────────────────────
+  # ── Deploy TEST (manual gate) ──────────────────────────────────────────────────────
   deploy-test:
     name: Deploy → test
     needs: deploy-dev
@@ -91,11 +91,11 @@ jobs:
         run: |
           az deployment sub create \
             --name hub-spoke-test-${{ github.run_number }} \
-            --location eastus \
+            --location uksouth \
             --template-file infrastructure/main.bicep \
             --parameters infrastructure/parameters/test.bicepparam
 
-  # ── Deploy PROD (manual gate) ──────────────────────────────────────────────
+  # ── Deploy PROD (manual gate) ──────────────────────────────────────────────────────
   deploy-prod:
     name: Deploy → prod
     needs: deploy-test
@@ -116,6 +116,6 @@ jobs:
         run: |
           az deployment sub create \
             --name hub-spoke-prod-${{ github.run_number }} \
-            --location eastus \
+            --location uksouth \
             --template-file infrastructure/main.bicep \
             --parameters infrastructure/parameters/prod.bicepparam
