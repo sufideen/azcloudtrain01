@@ -1,0 +1,465 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 840" width="2560" height="1680" font-family="'Segoe UI', Tahoma, Arial, sans-serif">
+
+  <!-- ══════════════════════════════════════════════════════
+       DEFS — arrowheads, gradients
+       ══════════════════════════════════════════════════════ -->
+  <defs>
+    <marker id="ah-blue" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#0078D4"/>
+    </marker>
+    <marker id="ah-red" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#C50F1F"/>
+    </marker>
+    <marker id="ah-teal" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#038387"/>
+    </marker>
+    <marker id="ah-purple" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#8764B8"/>
+    </marker>
+    <marker id="ah-gray" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#8A8886"/>
+    </marker>
+    <linearGradient id="hub-header-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0063B1"/>
+      <stop offset="100%" stop-color="#0078D4"/>
+    </linearGradient>
+    <linearGradient id="spoke-header-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#005A9E"/>
+      <stop offset="100%" stop-color="#0091DA"/>
+    </linearGradient>
+    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00000020"/>
+    </filter>
+  </defs>
+
+  <!-- ══════════════════════════════════════════════════════
+       BACKGROUND
+       ══════════════════════════════════════════════════════ -->
+  <rect width="1280" height="840" fill="#F3F2F1"/>
+
+  <!-- Subtle grid lines -->
+  <g stroke="#E1DFDD" stroke-width="0.5" opacity="0.6">
+    <line x1="0" y1="200" x2="1280" y2="200"/>
+    <line x1="0" y1="400" x2="1280" y2="400"/>
+    <line x1="0" y1="600" x2="1280" y2="600"/>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════════
+       TITLE HEADER BAR
+       ══════════════════════════════════════════════════════ -->
+  <rect x="0" y="0" width="1280" height="56" fill="#0078D4"/>
+  <!-- Azure logo dot (simplified) -->
+  <circle cx="24" cy="28" r="12" fill="white" opacity="0.15"/>
+  <text x="24" y="33" text-anchor="middle" fill="white" font-size="14" font-weight="700">A</text>
+  <text x="640" y="30" text-anchor="middle" fill="white" font-size="18" font-weight="600" letter-spacing="0.3">Azure Hub-and-Spoke Network Architecture</text>
+  <text x="640" y="47" text-anchor="middle" fill="#B3D6EF" font-size="10">Bicep IaC · GitHub Actions CI/CD · OIDC Authentication · Environments: dev · test · prod</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       EXTERNAL ACTORS  (left column  x=10-110)
+       ══════════════════════════════════════════════════════ -->
+
+  <!-- Internet (cloud icon) -->
+  <g transform="translate(14,80)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="96" height="88" rx="8" fill="white" stroke="#D2D0CE" stroke-width="1"/>
+    <!-- Cloud shape built from ellipses -->
+    <ellipse cx="48" cy="38" rx="28" ry="18" fill="#E8F4FD" stroke="#0078D4" stroke-width="1.5"/>
+    <ellipse cx="28" cy="46" rx="18" ry="13" fill="#E8F4FD" stroke="#0078D4" stroke-width="1.5"/>
+    <ellipse cx="68" cy="48" rx="16" ry="11" fill="#E8F4FD" stroke="#0078D4" stroke-width="1.5"/>
+    <rect x="12" y="46" width="72" height="13" fill="#E8F4FD"/>
+    <!-- Globe lines inside cloud -->
+    <line x1="20" y1="42" x2="76" y2="42" stroke="#0078D4" stroke-width="1" stroke-dasharray="3,2"/>
+    <ellipse cx="48" cy="38" rx="14" ry="18" fill="none" stroke="#0078D4" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="48" y="72" text-anchor="middle" fill="#201F1E" font-size="10" font-weight="600">Internet</text>
+    <text x="48" y="83" text-anchor="middle" fill="#605E5C" font-size="8">HTTPS / HTTP</text>
+  </g>
+
+  <!-- Egress (filtered) box -->
+  <g transform="translate(14,295)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="96" height="64" rx="8" fill="white" stroke="#C50F1F" stroke-width="1.5"/>
+    <!-- Flame / shield icon -->
+    <rect x="10" y="10" width="26" height="26" rx="4" fill="#FDE7E9"/>
+    <polygon points="23,13 31,28 15,28" fill="#C50F1F" opacity="0.8"/>
+    <polygon points="23,19 28,28 18,28" fill="#C50F1F"/>
+    <text x="54" y="22" fill="#C50F1F" font-size="10" font-weight="600">Egress</text>
+    <text x="54" y="35" fill="#605E5C" font-size="9">Filtered by</text>
+    <text x="54" y="47" fill="#605E5C" font-size="9">Firewall</text>
+    <text x="48" y="59" text-anchor="middle" fill="#C50F1F" font-size="7">Threat Intel active</text>
+  </g>
+
+  <!-- Admin (SSH/RDP) box -->
+  <g transform="translate(14,440)" filter="url(#card-shadow)">
+    <rect x="0" y="0" width="96" height="64" rx="8" fill="white" stroke="#038387" stroke-width="1.5"/>
+    <!-- Person icon -->
+    <circle cx="26" cy="22" r="8" fill="#038387" opacity="0.8"/>
+    <rect x="14" y="30" width="24" height="16" rx="6" fill="#038387" opacity="0.8"/>
+    <text x="54" y="22" fill="#038387" font-size="10" font-weight="600">Admin</text>
+    <text x="54" y="35" fill="#605E5C" font-size="9">SSH / RDP</text>
+    <text x="54" y="47" fill="#605E5C" font-size="9">via tunnel</text>
+    <text x="48" y="59" text-anchor="middle" fill="#038387" font-size="7">No public VM IP needed</text>
+  </g>
+
+  <!-- ══════════════════════════════════════════════════════
+       HUB VNET CONTAINER  x=118, y=64, w=432, h=612
+       ══════════════════════════════════════════════════════ -->
+  <rect x="118" y="64" width="432" height="614" rx="10" fill="#EBF3FB" stroke="#0078D4" stroke-width="2" filter="url(#card-shadow)"/>
+
+  <!-- Hub header -->
+  <rect x="118" y="64" width="432" height="46" rx="10" fill="url(#hub-header-grad)"/>
+  <rect x="118" y="96" width="432" height="14" fill="#0078D4"/>
+  <!-- VNet icon (network nodes) -->
+  <circle cx="138" cy="87" r="7" fill="white" opacity="0.25"/>
+  <circle cx="138" cy="87" r="4" fill="white" opacity="0.5"/>
+  <circle cx="130" cy="93" r="3" fill="white" opacity="0.4"/>
+  <circle cx="146" cy="93" r="3" fill="white" opacity="0.4"/>
+  <line x1="134" y1="90" x2="130" y2="93" stroke="white" stroke-width="1" opacity="0.5"/>
+  <line x1="142" y1="90" x2="146" y2="93" stroke="white" stroke-width="1" opacity="0.5"/>
+  <text x="165" y="85" fill="white" font-size="13" font-weight="700">HUB VNet</text>
+  <text x="165" y="100" fill="#B3D6EF" font-size="10">10.0.0.0/16</text>
+  <text x="490" y="85" text-anchor="end" fill="#B3D6EF" font-size="9">rg-contoso-hub-{env}</text>
+  <text x="490" y="100" text-anchor="end" fill="#B3D6EF" font-size="8">East US · UK South</text>
+
+  <!-- ─── AppGatewaySubnet ─── -->
+  <rect x="136" y="122" width="396" height="112" rx="6" fill="white" stroke="#8764B8" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <rect x="136" y="122" width="6" height="112" rx="3" fill="#8764B8"/>
+  <!-- App Gateway icon (purple, load-balancing arrows) -->
+  <rect x="150" y="134" width="36" height="36" rx="6" fill="#8764B8"/>
+  <line x1="158" y1="145" x2="178" y2="145" stroke="white" stroke-width="2" marker-end="url(#ah-purple)"/>
+  <line x1="158" y1="152" x2="178" y2="152" stroke="white" stroke-width="2" marker-end="url(#ah-purple)"/>
+  <line x1="158" y1="159" x2="178" y2="159" stroke="white" stroke-width="2" marker-end="url(#ah-purple)"/>
+  <!-- Subnet label -->
+  <text x="196" y="140" fill="#201F1E" font-size="11" font-weight="600">AppGatewaySubnet</text>
+  <text x="196" y="153" fill="#8764B8" font-size="9" font-weight="600">10.0.2.0/24</text>
+  <text x="196" y="166" fill="#605E5C" font-size="9">Application Gateway WAF v2  ·  Public IP</text>
+  <!-- NSG rule box -->
+  <rect x="150" y="174" width="370" height="50" rx="4" fill="#F5F0FF"/>
+  <text x="160" y="188" fill="#8764B8" font-size="8" font-weight="600">RULES:</text>
+  <text x="200" y="188" fill="#323130" font-size="8">Inbound: Internet HTTPS (443) + HTTP (80) via Public IP</text>
+  <text x="160" y="200" fill="#323130" font-size="8">WAF: OWASP 3.2 · Bot Manager · SQLi / XSS rules</text>
+  <text x="160" y="212" fill="#8764B8" font-size="8">HTTP → HTTPS 301 redirect (Detection: dev/test  ·  Prevention: prod)</text>
+
+  <!-- ─── AzureFirewallSubnet ─── -->
+  <rect x="136" y="246" width="396" height="112" rx="6" fill="white" stroke="#C50F1F" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <rect x="136" y="246" width="6" height="112" rx="3" fill="#C50F1F"/>
+  <!-- Firewall icon (shield + flame) -->
+  <rect x="150" y="258" width="36" height="36" rx="6" fill="#C50F1F"/>
+  <polygon points="168,261 180,283 156,283" fill="white" opacity="0.3"/>
+  <polygon points="168,267 177,283 159,283" fill="white" opacity="0.6"/>
+  <polygon points="168,273 174,283 162,283" fill="white" opacity="0.9"/>
+  <!-- Subnet label -->
+  <text x="196" y="264" fill="#201F1E" font-size="11" font-weight="600">AzureFirewallSubnet</text>
+  <text x="196" y="277" fill="#C50F1F" font-size="9" font-weight="600">10.0.1.0/26</text>
+  <text x="196" y="290" fill="#605E5C" font-size="9">Azure Firewall Standard  ·  Firewall Policy</text>
+  <!-- NSG rule box -->
+  <rect x="150" y="298" width="370" height="50" rx="4" fill="#FDE7E9"/>
+  <text x="160" y="312" fill="#C50F1F" font-size="8" font-weight="600">RULES:</text>
+  <text x="200" y="312" fill="#323130" font-size="8">All spoke egress → Internet routed via UDR (0.0.0.0/0 → Firewall private IP)</text>
+  <text x="160" y="324" fill="#323130" font-size="8">Threat Intelligence: Alert mode  ·  Application + Network rule collections</text>
+  <text x="160" y="336" fill="#C50F1F" font-size="8">Centralised egress point — inspect, log, and block outbound traffic</text>
+
+  <!-- ─── AzureBastionSubnet ─── -->
+  <rect x="136" y="370" width="396" height="112" rx="6" fill="white" stroke="#038387" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <rect x="136" y="370" width="6" height="112" rx="3" fill="#038387"/>
+  <!-- Bastion icon (castle turrets) -->
+  <rect x="150" y="382" width="36" height="36" rx="6" fill="#038387"/>
+  <rect x="154" y="382" width="7" height="10" rx="1" fill="white" opacity="0.8"/>
+  <rect x="164" y="382" width="7" height="10" rx="1" fill="white" opacity="0.8"/>
+  <rect x="174" y="382" width="7" height="10" rx="1" fill="white" opacity="0.8"/>
+  <rect x="154" y="390" width="28" height="22" rx="1" fill="white" opacity="0.8"/>
+  <rect x="164" y="394" width="7" height="18" rx="1" fill="#038387"/>
+  <!-- Subnet label -->
+  <text x="196" y="388" fill="#201F1E" font-size="11" font-weight="600">AzureBastionSubnet</text>
+  <text x="196" y="401" fill="#038387" font-size="9" font-weight="600">10.0.3.0/26</text>
+  <text x="196" y="414" fill="#605E5C" font-size="9">Azure Bastion Standard SKU  ·  Native client SSH/RDP</text>
+  <!-- NSG rule box -->
+  <rect x="150" y="422" width="370" height="50" rx="4" fill="#E5F6FB"/>
+  <text x="160" y="436" fill="#038387" font-size="8" font-weight="600">RULES:</text>
+  <text x="200" y="436" fill="#323130" font-size="8">Inbound: browser-based HTTPS tunnel (no public IP on VMs)</text>
+  <text x="160" y="448" fill="#323130" font-size="8">RDP (3389) + SSH (22) tunnelled to AdminSubnet VMs only</text>
+  <text x="160" y="460" fill="#038387" font-size="8">Standard SKU: native client tunnelling + shareable links</text>
+
+  <!-- ─── GatewaySubnet ─── -->
+  <rect x="136" y="494" width="396" height="72" rx="6" fill="white" stroke="#8A8886" stroke-width="1.5" stroke-dasharray="6,3" filter="url(#card-shadow)"/>
+  <rect x="136" y="494" width="6" height="72" rx="3" fill="#8A8886"/>
+  <!-- Gateway icon -->
+  <rect x="150" y="504" width="36" height="30" rx="6" fill="#8A8886"/>
+  <text x="168" y="523" text-anchor="middle" fill="white" font-size="16">⇌</text>
+  <!-- Subnet label -->
+  <text x="196" y="516" fill="#8A8886" font-size="11" font-weight="600">GatewaySubnet</text>
+  <text x="196" y="529" fill="#8A8886" font-size="9">10.0.0.0/27  ·  VPN / ExpressRoute ready — not deployed in this phase</text>
+  <text x="196" y="542" fill="#A19F9D" font-size="8" font-style="italic">Reserved for future VPN Gateway or ExpressRoute connection</text>
+
+  <!-- ─── Also in Hub Resource Group (Key Vault, Route Table, etc.) ─── -->
+  <rect x="136" y="580" width="396" height="86" rx="6" fill="#F0F6FF" stroke="#0078D4" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="334" y="598" text-anchor="middle" fill="#0078D4" font-size="10" font-weight="600">Also deployed in  rg-contoso-hub-{env}</text>
+  <text x="145" y="613" fill="#605E5C" font-size="8.5">🔑  Key Vault (RBAC mode) — SSL certificate store for App Gateway HTTPS listener</text>
+  <text x="145" y="626" fill="#605E5C" font-size="8.5">🗺  Route Table (UDR) — default route 0.0.0.0/0 → Firewall private IP (spoke egress)</text>
+  <text x="145" y="639" fill="#605E5C" font-size="8.5">📊  Log Analytics Workspace — diagnostics for Firewall, Bastion, App Gateway, NSGs</text>
+  <text x="145" y="652" fill="#605E5C" font-size="8.5">🌐  Public IPs — App Gateway PIP (static Standard SKU)  ·  Bastion PIP</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       VNET PEERING ZONE  x=553, y=112, w=124, h=570
+       ══════════════════════════════════════════════════════ -->
+  <rect x="553" y="112" width="124" height="568" rx="8" fill="#FAF9F8" stroke="#D2D0CE" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="615" y="136" text-anchor="middle" fill="#605E5C" font-size="9" font-weight="600">VNet</text>
+  <text x="615" y="149" text-anchor="middle" fill="#605E5C" font-size="9" font-weight="600">Peering</text>
+  <text x="615" y="163" text-anchor="middle" fill="#A19F9D" font-size="7">bidirectional</text>
+
+  <!-- Peering arrows — HTTPS traffic (AppGW → Web) -->
+  <line x1="553" y1="195" x2="677" y2="195" stroke="#8764B8" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ah-purple)"/>
+  <text x="615" y="190" text-anchor="middle" fill="#8764B8" font-size="7">HTTPS→Web</text>
+
+  <!-- Main bidirectional peering arrows -->
+  <line x1="677" y1="398" x2="556" y2="398" stroke="#0078D4" stroke-width="2" marker-end="url(#ah-blue)"/>
+  <line x1="556" y1="412" x2="677" y2="412" stroke="#0078D4" stroke-width="2" marker-end="url(#ah-blue)"/>
+  <text x="615" y="432" text-anchor="middle" fill="#0078D4" font-size="7">all subnets</text>
+
+  <!-- Peering arrow — Admin (Bastion → Admin subnet) -->
+  <line x1="553" y1="448" x2="677" y2="570" stroke="#038387" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ah-teal)"/>
+  <text x="608" y="508" text-anchor="middle" fill="#038387" font-size="7">SSH/RDP</text>
+  <text x="608" y="519" text-anchor="middle" fill="#038387" font-size="7">→Admin</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       SPOKE VNET CONTAINER  x=680, y=64, w=492, h=640
+       ══════════════════════════════════════════════════════ -->
+  <rect x="680" y="64" width="492" height="640" rx="10" fill="#EBF3FB" stroke="#0078D4" stroke-width="2" filter="url(#card-shadow)"/>
+
+  <!-- Spoke header -->
+  <rect x="680" y="64" width="492" height="46" rx="10" fill="url(#spoke-header-grad)"/>
+  <rect x="680" y="96" width="492" height="14" fill="#0091DA"/>
+  <!-- VNet icon -->
+  <circle cx="700" cy="87" r="7" fill="white" opacity="0.25"/>
+  <circle cx="700" cy="87" r="4" fill="white" opacity="0.5"/>
+  <circle cx="692" cy="93" r="3" fill="white" opacity="0.4"/>
+  <circle cx="708" cy="93" r="3" fill="white" opacity="0.4"/>
+  <line x1="696" y1="90" x2="692" y2="93" stroke="white" stroke-width="1" opacity="0.5"/>
+  <line x1="704" y1="90" x2="708" y2="93" stroke="white" stroke-width="1" opacity="0.5"/>
+  <text x="722" y="83" fill="white" font-size="13" font-weight="700">SPOKE VNet</text>
+  <text x="722" y="98" fill="#B3D6EF" font-size="8">per environment</text>
+  <!-- Env CIDRs in header -->
+  <rect x="870" y="70" width="90" height="18" rx="4" fill="#005A9E"/>
+  <text x="915" y="83" text-anchor="middle" fill="white" font-size="8" font-weight="600">dev  10.1.0.0/16</text>
+  <rect x="968" y="70" width="90" height="18" rx="4" fill="#005A9E"/>
+  <text x="1013" y="83" text-anchor="middle" fill="white" font-size="8" font-weight="600">test  10.2.0.0/16</text>
+  <rect x="1066" y="70" width="90" height="18" rx="4" fill="#005A9E"/>
+  <text x="1111" y="83" text-anchor="middle" fill="white" font-size="8" font-weight="600">prod  10.3.0.0/16</text>
+  <text x="1160" y="96" text-anchor="end" fill="#B3D6EF" font-size="8">rg-contoso-spoke-{env}</text>
+
+  <!-- ─── WebSubnet ─── -->
+  <rect x="698" y="122" width="456" height="120" rx="6" fill="white" stroke="#107C10" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <rect x="698" y="122" width="6" height="120" rx="3" fill="#107C10"/>
+  <!-- NSG badge -->
+  <rect x="1074" y="127" width="72" height="20" rx="10" fill="#CA5010"/>
+  <text x="1110" y="141" text-anchor="middle" fill="white" font-size="8" font-weight="600">nsg-web</text>
+  <!-- Web server icon -->
+  <rect x="712" y="134" width="36" height="36" rx="6" fill="#107C10"/>
+  <rect x="716" y="138" width="28" height="4" rx="1" fill="white" opacity="0.6"/>
+  <rect x="716" y="145" width="28" height="16" rx="1" fill="white" opacity="0.8"/>
+  <rect x="718" y="147" width="10" height="4" rx="1" fill="#107C10"/>
+  <rect x="718" y="153" width="16" height="3" rx="1" fill="#107C10"/>
+  <!-- Subnet label -->
+  <text x="758" y="140" fill="#201F1E" font-size="11" font-weight="600">WebSubnet</text>
+  <text x="758" y="153" fill="#107C10" font-size="9" font-weight="600">dev: 10.1.1.0/24  ·  test: 10.2.1.0/24  ·  prod: 10.3.1.0/24</text>
+  <text x="758" y="166" fill="#605E5C" font-size="9">Web tier — IIS · NGINX · App Service</text>
+  <!-- NSG rule box -->
+  <rect x="712" y="175" width="430" height="57" rx="4" fill="#F0FFF0"/>
+  <text x="720" y="189" fill="#107C10" font-size="8" font-weight="600">NSG RULES (nsg-web):</text>
+  <text x="720" y="202" fill="#323130" font-size="8">✓ Allow HTTPS (443) + HTTP (80)  from AppGatewaySubnet (priority 100, 110)</text>
+  <text x="720" y="215" fill="#323130" font-size="8">✓ Allow AppGW health probes (65200-65535) from GatewayManager (priority 120)</text>
+  <text x="720" y="228" fill="#C50F1F" font-size="8">✗ Deny All inbound — priority 4096</text>
+
+  <!-- ─── AppSubnet ─── -->
+  <rect x="698" y="254" width="456" height="120" rx="6" fill="white" stroke="#0078D4" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <rect x="698" y="254" width="6" height="120" rx="3" fill="#0078D4"/>
+  <!-- NSG badge -->
+  <rect x="1074" y="259" width="72" height="20" rx="10" fill="#CA5010"/>
+  <text x="1110" y="273" text-anchor="middle" fill="white" font-size="8" font-weight="600">nsg-app</text>
+  <!-- API / microservice icon -->
+  <rect x="712" y="266" width="36" height="36" rx="6" fill="#0078D4"/>
+  <rect x="716" y="270" width="28" height="6" rx="2" fill="white" opacity="0.8"/>
+  <rect x="716" y="280" width="20" height="4" rx="1" fill="white" opacity="0.6"/>
+  <rect x="716" y="287" width="24" height="4" rx="1" fill="white" opacity="0.6"/>
+  <circle cx="736" cy="292" r="4" fill="white" opacity="0.9"/>
+  <!-- Subnet label -->
+  <text x="758" y="272" fill="#201F1E" font-size="11" font-weight="600">AppSubnet</text>
+  <text x="758" y="285" fill="#0078D4" font-size="9" font-weight="600">dev: 10.1.2.0/24  ·  test: 10.2.2.0/24  ·  prod: 10.3.2.0/24</text>
+  <text x="758" y="298" fill="#605E5C" font-size="9">Application tier — APIs · Microservices · Azure Functions</text>
+  <!-- NSG rule box -->
+  <rect x="712" y="307" width="430" height="57" rx="4" fill="#EFF6FF"/>
+  <text x="720" y="321" fill="#0078D4" font-size="8" font-weight="600">NSG RULES (nsg-app):</text>
+  <text x="720" y="334" fill="#323130" font-size="8">✓ Allow HTTP (80), HTTPS (443), App (8080, 8443) from WebSubnet only (priority 100)</text>
+  <text x="720" y="347" fill="#323130" font-size="8">  Egress via UDR → Azure Firewall for outbound internet access</text>
+  <text x="720" y="360" fill="#C50F1F" font-size="8">✗ Deny All inbound — priority 4096</text>
+
+  <!-- ─── DataSubnet ─── -->
+  <rect x="698" y="386" width="456" height="120" rx="6" fill="white" stroke="#CA5010" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <rect x="698" y="386" width="6" height="120" rx="3" fill="#CA5010"/>
+  <!-- NSG badge -->
+  <rect x="1071" y="391" width="78" height="20" rx="10" fill="#CA5010"/>
+  <text x="1110" y="405" text-anchor="middle" fill="white" font-size="8" font-weight="600">nsg-data</text>
+  <!-- Database cylinder icon -->
+  <rect x="712" y="398" width="36" height="36" rx="6" fill="#CA5010"/>
+  <ellipse cx="730" cy="404" rx="11" ry="4" fill="white" opacity="0.8"/>
+  <rect x="719" y="404" width="22" height="14" fill="white" opacity="0.8"/>
+  <ellipse cx="730" cy="418" rx="11" ry="4" fill="white" opacity="0.8"/>
+  <!-- Subnet label -->
+  <text x="758" y="404" fill="#201F1E" font-size="11" font-weight="600">DataSubnet</text>
+  <text x="758" y="417" fill="#CA5010" font-size="9" font-weight="600">dev: 10.1.3.0/24  ·  test: 10.2.3.0/24  ·  prod: 10.3.3.0/24</text>
+  <text x="758" y="430" fill="#605E5C" font-size="9">Data tier — Azure SQL · PostgreSQL · Cosmos DB</text>
+  <!-- NSG rule box -->
+  <rect x="712" y="439" width="430" height="57" rx="4" fill="#FFF4EE"/>
+  <text x="720" y="453" fill="#CA5010" font-size="8" font-weight="600">NSG RULES (nsg-data):</text>
+  <text x="720" y="466" fill="#323130" font-size="8">✓ Allow SQL Server (1433) from AppSubnet (priority 100)</text>
+  <text x="720" y="479" fill="#323130" font-size="8">✓ Allow PostgreSQL (5432) from AppSubnet (priority 110)  ·  Allow RDP (3389) from AdminSubnet (priority 120)</text>
+  <text x="720" y="492" fill="#C50F1F" font-size="8">✗ Deny All inbound — priority 4096</text>
+
+  <!-- ─── AdminSubnet ─── -->
+  <rect x="698" y="518" width="456" height="120" rx="6" fill="white" stroke="#038387" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <rect x="698" y="518" width="6" height="120" rx="3" fill="#038387"/>
+  <!-- NSG badge -->
+  <rect x="1064" y="523" width="86" height="20" rx="10" fill="#CA5010"/>
+  <text x="1107" y="537" text-anchor="middle" fill="white" font-size="8" font-weight="600">nsg-admin</text>
+  <!-- Jump server / shield icon -->
+  <rect x="712" y="530" width="36" height="36" rx="6" fill="#038387"/>
+  <!-- Shield shape -->
+  <path d="M730,533 L742,538 L742,548 Q742,556 730,562 Q718,556 718,548 L718,538 Z" fill="white" opacity="0.8"/>
+  <text x="730" y="553" text-anchor="middle" fill="#038387" font-size="10" font-weight="700">✓</text>
+  <!-- Subnet label -->
+  <text x="758" y="536" fill="#201F1E" font-size="11" font-weight="600">AdminSubnet</text>
+  <text x="758" y="549" fill="#038387" font-size="9" font-weight="600">dev: 10.1.4.0/24  ·  test: 10.2.4.0/24  ·  prod: 10.3.4.0/24</text>
+  <text x="758" y="562" fill="#605E5C" font-size="9">Management — jump servers · admin VMs · monitoring agents</text>
+  <!-- NSG rule box -->
+  <rect x="712" y="571" width="430" height="57" rx="4" fill="#E5F6FB"/>
+  <text x="720" y="585" fill="#038387" font-size="8" font-weight="600">NSG RULES (nsg-admin):</text>
+  <text x="720" y="598" fill="#323130" font-size="8">✓ Allow RDP (3389) from AzureBastionSubnet only (priority 100)</text>
+  <text x="720" y="611" fill="#323130" font-size="8">✓ Allow SSH (22) from AzureBastionSubnet only (priority 110)</text>
+  <text x="720" y="624" fill="#C50F1F" font-size="8">✗ Deny All inbound — priority 4096</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       STORAGE ACCOUNT  (right of Spoke)
+       ══════════════════════════════════════════════════════ -->
+  <rect x="1186" y="180" width="84" height="120" rx="8" fill="white" stroke="#0078D4" stroke-width="1.5" filter="url(#card-shadow)"/>
+  <rect x="1186" y="180" width="84" height="10" rx="5" fill="#0078D4"/>
+  <!-- Storage cylinder icon -->
+  <ellipse cx="1228" cy="222" rx="20" ry="7" fill="#EBF3FB" stroke="#0078D4" stroke-width="1"/>
+  <rect x="1208" y="222" width="40" height="28" fill="#EBF3FB" stroke="#0078D4" stroke-width="1"/>
+  <rect x="1208" y="249" width="40" height="1" fill="#0078D4"/>
+  <ellipse cx="1228" cy="250" rx="20" ry="7" fill="#EBF3FB" stroke="#0078D4" stroke-width="1"/>
+  <text x="1228" y="271" text-anchor="middle" fill="#0078D4" font-size="9" font-weight="600">Storage</text>
+  <text x="1228" y="282" text-anchor="middle" fill="#605E5C" font-size="7">dev/test: LRS</text>
+  <text x="1228" y="292" text-anchor="middle" fill="#605E5C" font-size="7">prod: GRS</text>
+  <text x="1228" y="295" text-anchor="middle" fill="#A19F9D" font-size="6.5">rg-contoso-storage</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       TRAFFIC FLOW ARROWS (external connections)
+       ══════════════════════════════════════════════════════ -->
+
+  <!-- Internet → AppGW subnet (HTTPS/HTTP inbound) -->
+  <path d="M 112 132 L 134 175" stroke="#8764B8" stroke-width="2" fill="none" marker-end="url(#ah-purple)"/>
+  <text x="100" y="152" fill="#8764B8" font-size="8" font-weight="600">HTTPS</text>
+  <text x="100" y="163" fill="#8764B8" font-size="8">HTTP</text>
+
+  <!-- AzureFirewallSubnet → Egress (outbound filtered) -->
+  <path d="M 134 302 L 112 318" stroke="#C50F1F" stroke-width="2" fill="none" marker-end="url(#ah-red)"/>
+  <text x="92" y="312" fill="#C50F1F" font-size="7">filtered</text>
+
+  <!-- Admin → AzureBastionSubnet (SSH/RDP inbound) -->
+  <path d="M 112 448 L 134 426" stroke="#038387" stroke-width="2" fill="none" marker-end="url(#ah-teal)"/>
+  <text x="92" y="445" fill="#038387" font-size="7">tunnel</text>
+
+  <!-- Storage account connection line (optional — to right of spoke) -->
+  <line x1="1172" y1="230" x2="1184" y2="230" stroke="#0078D4" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ah-blue)"/>
+
+  <!-- ══════════════════════════════════════════════════════
+       LEGEND / RESOURCE GROUPS  (bottom bar)
+       ══════════════════════════════════════════════════════ -->
+  <rect x="8" y="718" width="1264" height="114" rx="8" fill="white" stroke="#D2D0CE" stroke-width="1" filter="url(#card-shadow)"/>
+  <text x="640" y="736" text-anchor="middle" fill="#201F1E" font-size="11" font-weight="600">Azure Resource Groups  (9 total — 3 per environment)</text>
+
+  <!-- dev RGs -->
+  <rect x="18" y="744" width="136" height="20" rx="4" fill="#EFF6FC" stroke="#0078D4" stroke-width="1"/>
+  <text x="86" y="758" text-anchor="middle" fill="#0078D4" font-size="8">rg-contoso-hub-dev</text>
+  <rect x="18" y="768" width="136" height="20" rx="4" fill="#EFF6FC" stroke="#0078D4" stroke-width="1"/>
+  <text x="86" y="782" text-anchor="middle" fill="#0078D4" font-size="8">rg-contoso-spoke-dev</text>
+  <rect x="18" y="792" width="136" height="20" rx="4" fill="#EFF6FC" stroke="#0078D4" stroke-width="1"/>
+  <text x="86" y="806" text-anchor="middle" fill="#0078D4" font-size="8">rg-contoso-storage-dev</text>
+
+  <!-- test RGs -->
+  <rect x="164" y="744" width="136" height="20" rx="4" fill="#EFF6FC" stroke="#0078D4" stroke-width="1"/>
+  <text x="232" y="758" text-anchor="middle" fill="#0078D4" font-size="8">rg-contoso-hub-test</text>
+  <rect x="164" y="768" width="136" height="20" rx="4" fill="#EFF6FC" stroke="#0078D4" stroke-width="1"/>
+  <text x="232" y="782" text-anchor="middle" fill="#0078D4" font-size="8">rg-contoso-spoke-test</text>
+  <rect x="164" y="792" width="136" height="20" rx="4" fill="#EFF6FC" stroke="#0078D4" stroke-width="1"/>
+  <text x="232" y="806" text-anchor="middle" fill="#0078D4" font-size="8">rg-contoso-storage-test</text>
+
+  <!-- prod RGs -->
+  <rect x="310" y="744" width="136" height="20" rx="4" fill="#EFF6FC" stroke="#0078D4" stroke-width="1"/>
+  <text x="378" y="758" text-anchor="middle" fill="#0078D4" font-size="8">rg-contoso-hub-prod</text>
+  <rect x="310" y="768" width="136" height="20" rx="4" fill="#EFF6FC" stroke="#0078D4" stroke-width="1"/>
+  <text x="378" y="782" text-anchor="middle" fill="#0078D4" font-size="8">rg-contoso-spoke-prod</text>
+  <rect x="310" y="792" width="136" height="20" rx="4" fill="#EFF6FC" stroke="#0078D4" stroke-width="1"/>
+  <text x="378" y="806" text-anchor="middle" fill="#0078D4" font-size="8">rg-contoso-storage-prod</text>
+
+  <!-- Divider -->
+  <line x1="456" y1="740" x2="456" y2="824" stroke="#E1DFDD" stroke-width="1"/>
+
+  <!-- Color legend -->
+  <text x="470" y="752" fill="#605E5C" font-size="9" font-weight="600">Resource colours</text>
+
+  <rect x="470" y="760" width="11" height="11" rx="2" fill="#8764B8"/>
+  <text x="486" y="770" fill="#323130" font-size="8">App Gateway WAF v2</text>
+
+  <rect x="470" y="776" width="11" height="11" rx="2" fill="#C50F1F"/>
+  <text x="486" y="786" fill="#323130" font-size="8">Azure Firewall</text>
+
+  <rect x="470" y="792" width="11" height="11" rx="2" fill="#038387"/>
+  <text x="486" y="802" fill="#323130" font-size="8">Azure Bastion</text>
+
+  <rect x="470" y="808" width="11" height="11" rx="2" fill="#8A8886" stroke="#8A8886" stroke-dasharray="3,1"/>
+  <text x="486" y="818" fill="#323130" font-size="8">Gateway (reserved)</text>
+
+  <rect x="590" y="760" width="11" height="11" rx="2" fill="#107C10"/>
+  <text x="606" y="770" fill="#323130" font-size="8">WebSubnet  ·  nsg-web</text>
+
+  <rect x="590" y="776" width="11" height="11" rx="2" fill="#0078D4"/>
+  <text x="606" y="786" fill="#323130" font-size="8">AppSubnet  ·  nsg-app</text>
+
+  <rect x="590" y="792" width="11" height="11" rx="2" fill="#CA5010"/>
+  <text x="606" y="802" fill="#323130" font-size="8">DataSubnet  ·  nsg-data</text>
+
+  <rect x="590" y="808" width="11" height="11" rx="2" fill="#038387"/>
+  <text x="606" y="818" fill="#323130" font-size="8">AdminSubnet  ·  nsg-admin</text>
+
+  <!-- Divider -->
+  <line x1="750" y1="740" x2="750" y2="824" stroke="#E1DFDD" stroke-width="1"/>
+
+  <!-- Traffic flow legend -->
+  <text x="764" y="752" fill="#605E5C" font-size="9" font-weight="600">Traffic flows</text>
+
+  <line x1="764" y1="764" x2="800" y2="764" stroke="#8764B8" stroke-width="2" marker-end="url(#ah-purple)"/>
+  <text x="806" y="768" fill="#323130" font-size="8">Internet HTTPS → App Gateway</text>
+
+  <line x1="764" y1="780" x2="800" y2="780" stroke="#8764B8" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ah-purple)"/>
+  <text x="806" y="784" fill="#323130" font-size="8">App Gateway → WebSubnet (via VNet Peering)</text>
+
+  <line x1="764" y1="796" x2="800" y2="796" stroke="#C50F1F" stroke-width="2" marker-end="url(#ah-red)"/>
+  <text x="806" y="800" fill="#323130" font-size="8">Spoke egress → Azure Firewall (UDR 0.0.0.0/0)</text>
+
+  <line x1="764" y1="812" x2="800" y2="812" stroke="#038387" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ah-teal)"/>
+  <text x="806" y="816" fill="#323130" font-size="8">Admin SSH/RDP → Bastion → AdminSubnet (tunnel)</text>
+
+  <!-- Divider -->
+  <line x1="1040" y1="740" x2="1040" y2="824" stroke="#E1DFDD" stroke-width="1"/>
+
+  <!-- NSG badge legend -->
+  <text x="1054" y="752" fill="#605E5C" font-size="9" font-weight="600">Badges  /  icons</text>
+  <rect x="1054" y="759" width="46" height="16" rx="8" fill="#CA5010"/>
+  <text x="1077" y="771" text-anchor="middle" fill="white" font-size="7" font-weight="600">nsg-web</text>
+  <text x="1106" y="771" fill="#323130" font-size="8">  Network Security Group</text>
+  <text x="1054" y="790" fill="#323130" font-size="8">NSG = subnet-level firewall</text>
+  <text x="1054" y="803" fill="#323130" font-size="8">all rules are stateful (return</text>
+  <text x="1054" y="816" fill="#323130" font-size="8">traffic automatically allowed)</text>
+
+  <!-- Footer note -->
+  <text x="640" y="828" text-anchor="middle" fill="#A19F9D" font-size="7.5">Built with Azure Bicep  ·  Deployed via GitHub Actions OIDC  ·  github.com/sufideen/azcloudtrain01</text>
+
+</svg>
