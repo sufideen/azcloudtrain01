@@ -1,22 +1,26 @@
 /*
-  Application Gateway v2 with WAF (OWASP 3.2)
-  Phase 1: HTTP(80) only — routes to backend pool with WAF inspection.
-  Phase 2: Add SSL cert from Key Vault and enable HTTPS(443) + HTTP→HTTPS redirect.
-  WAF in Prevention mode for prod, Detection for dev/test.
+  Application Gateway WAF v2 (OWASP 3.2 + BotManager)
+  HTTP is always active.
+  HTTPS activates when keyVaultCertSecretUri is provided (run bootstrap-ssl.sh first).
+  WAF: Detection mode for dev/test, Prevention for prod.
 */
 param location string
 param environment string
 param namePrefix string
 param tags object
 param appGatewaySubnetId string
+param managedIdentityId string = ''        // user-assigned identity for KV cert access
+@secure()
+param keyVaultCertSecretUri string = ''
 
 var appGwName     = 'agw-${namePrefix}-${environment}'
 var pipName       = 'pip-agw-${namePrefix}-${environment}'
 var wafPolicyName = 'waf-${namePrefix}-${environment}'
+var wafMode       = environment == 'prod' ? 'Prevention' : 'Detection'
+var capacity      = environment == 'prod' ? 2 : 1
+var httpsEnabled  = !empty(keyVaultCertSecretUri) && !empty(managedIdentityId)
 
-var wafMode  = environment == 'prod' ? 'Prevention' : 'Detection'
-var capacity = environment == 'prod' ? 2 : 1
-
+// ── Public IP ──────────────────────────────────────────────────────────────────
 resource publicIp 'Microsoft.Network/publicIPAddresses@2023-09-01' = {
   name: pipName
   location: location
@@ -28,6 +32,7 @@ resource publicIp 'Microsoft.Network/publicIPAddresses@2023-09-01' = {
   }
 }
 
+// ── WAF Policy (standalone — not the deprecated inline config) ──────────────────
 resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies@2023-09-01' = {
   name: wafPolicyName
   location: location
@@ -66,10 +71,81 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
   }
 }
 
+// ── Conditional HTTPS building blocks ─────────────────────────────────────────────
+var extraFrontendPorts = httpsEnabled ? [
+  { name: 'port-443', properties: { port: 443 } }
+] : []
+
+var sslCertificates = httpsEnabled ? [
+  { name: 'kv-ssl-cert', properties: { keyVaultSecretId: keyVaultCertSecretUri } }
+] : []
+
+var httpsListeners = httpsEnabled ? [
+  {
+    name: 'httpsListener'
+    properties: {
+      frontendIPConfiguration: { id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'appGwFrontendIp') }
+      frontendPort:            { id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'port-443') }
+      protocol: 'Https'
+      sslCertificate: { id: resourceId('Microsoft.Network/applicationGateways/sslCertificates', appGwName, 'kv-ssl-cert') }
+    }
+  }
+] : []
+
+// HTTP redirects to HTTPS when cert is present; otherwise routes to backend directly
+var httpRedirectConfigs = httpsEnabled ? [
+  {
+    name: 'httpToHttps'
+    properties: {
+      redirectType: 'Permanent'
+      targetListener: { id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpsListener') }
+      includePath: true
+      includeQueryString: true
+    }
+  }
+] : []
+
+var httpRoutingRule = httpsEnabled ? {
+  name: 'httpRedirectRule'
+  properties: {
+    ruleType: 'Basic'
+    priority: 100
+    httpListener:          { id: resourceId('Microsoft.Network/applicationGateways/httpListeners',         appGwName, 'httpListener') }
+    redirectConfiguration: { id: resourceId('Microsoft.Network/applicationGateways/redirectConfigurations', appGwName, 'httpToHttps') }
+  }
+} : {
+  name: 'httpRule'
+  properties: {
+    ruleType: 'Basic'
+    priority: 100
+    httpListener:       { id: resourceId('Microsoft.Network/applicationGateways/httpListeners',              appGwName, 'httpListener') }
+    backendAddressPool: { id: resourceId('Microsoft.Network/applicationGateways/backendAddressPools',        appGwName, 'webBackendPool') }
+    backendHttpSettings:{ id: resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', appGwName, 'httpSettings') }
+  }
+}
+
+var httpsRoutingRules = httpsEnabled ? [
+  {
+    name: 'httpsRule'
+    properties: {
+      ruleType: 'Basic'
+      priority: 200
+      httpListener:       { id: resourceId('Microsoft.Network/applicationGateways/httpListeners',              appGwName, 'httpsListener') }
+      backendAddressPool: { id: resourceId('Microsoft.Network/applicationGateways/backendAddressPools',        appGwName, 'webBackendPool') }
+      backendHttpSettings:{ id: resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', appGwName, 'httpSettings') }
+    }
+  }
+] : []
+
+// ── App Gateway ───────────────────────────────────────────────────────────────────
 resource appGateway 'Microsoft.Network/applicationGateways@2023-09-01' = {
   name: appGwName
   location: location
   tags: tags
+  identity: empty(managedIdentityId) ? null : {
+    type: 'UserAssigned'
+    userAssignedIdentities: { '${managedIdentityId}': {} }
+  }
   properties: {
     sku: {
       name: 'WAF_v2'
@@ -77,6 +153,7 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-09-01' = {
       capacity: capacity
     }
     firewallPolicy: { id: wafPolicy.id }
+    sslCertificates: sslCertificates
     gatewayIPConfigurations: [
       {
         name: 'appGwIpConfig'
@@ -89,9 +166,10 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-09-01' = {
         properties: { publicIPAddress: { id: publicIp.id } }
       }
     ]
-    frontendPorts: [
-      { name: 'port-80', properties: { port: 80 } }
-    ]
+    frontendPorts: concat(
+      [{ name: 'port-80', properties: { port: 80 } }],
+      extraFrontendPorts
+    )
     backendAddressPools: [
       { name: 'webBackendPool', properties: {} }
     ]
@@ -123,28 +201,21 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-09-01' = {
         }
       }
     ]
-    httpListeners: [
-      {
-        name: 'httpListener'
-        properties: {
-          frontendIPConfiguration: { id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'appGwFrontendIp') }
-          frontendPort: { id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'port-80') }
-          protocol: 'Http'
+    httpListeners: concat(
+      [
+        {
+          name: 'httpListener'
+          properties: {
+            frontendIPConfiguration: { id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'appGwFrontendIp') }
+            frontendPort:            { id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'port-80') }
+            protocol: 'Http'
+          }
         }
-      }
-    ]
-    requestRoutingRules: [
-      {
-        name: 'httpRoutingRule'
-        properties: {
-          ruleType: 'Basic'
-          priority: 100
-          httpListener: { id: resourceId('Microsoft.Network/applicationGateways/httpListeners', appGwName, 'httpListener') }
-          backendAddressPool: { id: resourceId('Microsoft.Network/applicationGateways/backendAddressPools', appGwName, 'webBackendPool') }
-          backendHttpSettings: { id: resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', appGwName, 'httpSettings') }
-        }
-      }
-    ]
+      ],
+      httpsListeners
+    )
+    redirectConfigurations: httpRedirectConfigs
+    requestRoutingRules: concat([httpRoutingRule], httpsRoutingRules)
   }
 }
 
