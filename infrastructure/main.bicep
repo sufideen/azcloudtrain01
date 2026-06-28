@@ -1,6 +1,8 @@
 /*
-  Hub-and-Spoke Network Architecture
-  Deploys: Hub VNet, Spoke VNet, NSGs, App Gateway (WAF v2), Storage, VNet Peering
+  Hub-and-Spoke Network Architecture — Phase 2
+  Deploys: Hub VNet, Spoke VNet, NSGs, Azure Firewall, Azure Bastion,
+           App Gateway (WAF v2), Key Vault, Storage, VNet Peering,
+           Log Analytics diagnostics, Cost Management budget alerts
 */
 targetScope = 'subscription'
 
@@ -11,7 +13,7 @@ param environment string
 @description('Azure region for all resources')
 param location string = 'uksouth'
 
-@description('Spoke VNet address space (e.g. 10.1.0.0/16 for dev)')
+@description('Spoke VNet address space')
 param spokeAddressPrefix string
 
 @description('Hub VNet address space')
@@ -26,6 +28,15 @@ param tags object = {
   project: 'hub-spoke'
   managedBy: 'bicep'
 }
+
+@description('Email address for cost budget and monitoring alerts')
+param alertEmail string
+
+@description('Monthly budget threshold in GBP — alerts fire at 80%, 100%, and 110% forecast')
+param monthlyBudgetGbp int = 1500
+
+@description('Key Vault secret URI for the TLS certificate. Run bootstrap-ssl.sh then re-deploy to activate HTTPS.')
+param keyVaultCertSecretUri string = ''
 
 // ── Resource Groups ─────────────────────────────────────────────────────────
 resource hubRg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
@@ -46,7 +57,32 @@ resource storageRg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   tags: tags
 }
 
-// ── NSGs (deployed into spoke RG) ───────────────────────────────────────────
+// ── User-assigned identity (App Gateway → Key Vault cert access) ────────────────
+module appGwIdentity 'modules/identity.bicep' = {
+  name: 'identity-deployment'
+  scope: hubRg
+  params: {
+    location: location
+    namePrefix: namePrefix
+    environment: environment
+    tags: tags
+  }
+}
+
+// ── Key Vault (hub RG) ──────────────────────────────────────────────────────────
+module kv 'modules/keyvault.bicep' = {
+  name: 'keyvault-deployment'
+  scope: hubRg
+  params: {
+    location: location
+    environment: environment
+    namePrefix: namePrefix
+    tags: tags
+    appGatewayPrincipalId: appGwIdentity.outputs.principalId
+  }
+}
+
+// ── NSGs (spoke RG) ──────────────────────────────────────────────────────────────
 module nsgs 'modules/nsg.bicep' = {
   name: 'nsg-deployment'
   scope: spokeRg
@@ -55,13 +91,13 @@ module nsgs 'modules/nsg.bicep' = {
     environment: environment
     namePrefix: namePrefix
     tags: tags
-    appGatewaySubnetPrefix: cidrSubnet(hubAddressPrefix, 24, 2)  // 10.0.2.0/24
-    bastionSubnetPrefix: cidrSubnet(hubAddressPrefix, 26, 12)    // 10.0.3.0/26
+    appGatewaySubnetPrefix: cidrSubnet(hubAddressPrefix, 24, 2)
+    bastionSubnetPrefix: cidrSubnet(hubAddressPrefix, 26, 12)
     spokeAddressPrefix: spokeAddressPrefix
   }
 }
 
-// ── Hub Network ─────────────────────────────────────────────────────────────
+// ── Hub Network (VNet + Firewall + Bastion) ────────────────────────────────────
 module hub 'modules/hub-network.bicep' = {
   name: 'hub-network-deployment'
   scope: hubRg
@@ -74,7 +110,7 @@ module hub 'modules/hub-network.bicep' = {
   }
 }
 
-// ── Spoke Network ───────────────────────────────────────────────────────────
+// ── Spoke Network ─────────────────────────────────────────────────────────────
 module spoke 'modules/spoke-network.bicep' = {
   name: 'spoke-network-deployment'
   scope: spokeRg
@@ -91,7 +127,7 @@ module spoke 'modules/spoke-network.bicep' = {
   }
 }
 
-// ── VNet Peering ────────────────────────────────────────────────────────────
+// ── VNet Peering ─────────────────────────────────────────────────────────────────
 module peering 'modules/vnet-peering.bicep' = {
   name: 'vnet-peering-deployment'
   params: {
@@ -105,7 +141,7 @@ module peering 'modules/vnet-peering.bicep' = {
   }
 }
 
-// ── App Gateway with WAF ─────────────────────────────────────────────────────
+// ── App Gateway (WAF v2 + optional HTTPS via Key Vault) ────────────────────────
 module appGateway 'modules/app-gateway.bicep' = {
   name: 'app-gateway-deployment'
   scope: hubRg
@@ -115,10 +151,12 @@ module appGateway 'modules/app-gateway.bicep' = {
     namePrefix: namePrefix
     tags: tags
     appGatewaySubnetId: hub.outputs.appGatewaySubnetId
+    managedIdentityId: appGwIdentity.outputs.identityId
+    keyVaultCertSecretUri: keyVaultCertSecretUri
   }
 }
 
-// ── Storage Account (Bicep artifacts + app data) ─────────────────────────────
+// ── Storage Account ──────────────────────────────────────────────────────────────
 module storage 'modules/storage.bicep' = {
   name: 'storage-deployment'
   scope: storageRg
@@ -130,8 +168,72 @@ module storage 'modules/storage.bicep' = {
   }
 }
 
+// ── Centralised Diagnostics (Log Analytics + diagnostic settings) ───────────────
+module diagnostics 'modules/diagnostics.bicep' = {
+  name: 'diagnostics-deployment'
+  scope: hubRg
+  params: {
+    location: location
+    environment: environment
+    namePrefix: namePrefix
+    tags: tags
+    appGatewayName: appGateway.outputs.appGatewayName
+    firewallName: hub.outputs.firewallName
+  }
+}
+
+// ── Cost Management Budget (subscription scope) ───────────────────────────────
+resource budget 'Microsoft.Consumption/budgets@2023-05-01' = {
+  name: 'budget-hub-spoke-${environment}'
+  properties: {
+    category: 'Cost'
+    amount: monthlyBudgetGbp
+    timeGrain: 'Monthly'
+    timePeriod: { startDate: '2026-06-01' }
+    filter: {
+      dimensions: {
+        name: 'ResourceGroupName'
+        operator: 'In'
+        values: [
+          hubRg.name
+          spokeRg.name
+          storageRg.name
+        ]
+      }
+    }
+    notifications: {
+      Actual_80Pct: {
+        enabled: true
+        operator: 'GreaterThan'
+        threshold: 80
+        contactEmails: [alertEmail]
+        thresholdType: 'Actual'
+      }
+      Actual_100Pct: {
+        enabled: true
+        operator: 'GreaterThan'
+        threshold: 100
+        contactEmails: [alertEmail]
+        thresholdType: 'Actual'
+      }
+      Forecasted_110Pct: {
+        enabled: true
+        operator: 'GreaterThan'
+        threshold: 110
+        contactEmails: [alertEmail]
+        thresholdType: 'Forecasted'
+      }
+    }
+  }
+}
+
 // ── Outputs ──────────────────────────────────────────────────────────────────
 output hubVnetId string = hub.outputs.vnetId
 output spokeVnetId string = spoke.outputs.vnetId
 output appGatewayPublicIp string = appGateway.outputs.publicIpAddress
 output storageAccountName string = storage.outputs.accountName
+output keyVaultName string = kv.outputs.keyVaultName
+output keyVaultUri string = kv.outputs.keyVaultUri
+output logAnalyticsName string = diagnostics.outputs.logAnalyticsName
+output firewallPrivateIp string = hub.outputs.firewallPrivateIp
+output bastionName string = hub.outputs.bastionName
