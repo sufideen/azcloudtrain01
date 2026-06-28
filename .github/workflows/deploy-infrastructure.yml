@@ -16,8 +16,14 @@ on:
         type: choice
         options: [dev, test, prod]
 
+# Prevent concurrent deployments to the same environment — a second run
+# queues and waits rather than racing against an in-progress deployment.
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || 'validate' }}
+  cancel-in-progress: false
+
+# Minimal permissions at workflow level; each job adds only what it needs.
 permissions:
-  id-token: write   # OIDC login to Azure
   contents: read
 
 jobs:
@@ -25,6 +31,9 @@ jobs:
   validate:
     name: Validate Bicep
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # OIDC login to Azure
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -41,7 +50,7 @@ jobs:
       - name: What-if — dev
         run: |
           az deployment sub what-if \
-            --location eastus \
+            --location uksouth \
             --template-file infrastructure/main.bicep \
             --parameters infrastructure/parameters/dev.bicepparam
 
@@ -51,6 +60,9 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     environment: dev
+    permissions:
+      id-token: write
+      contents: read
     if: github.ref == 'refs/heads/master' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
     steps:
       - uses: actions/checkout@v4
@@ -66,7 +78,7 @@ jobs:
         run: |
           az deployment sub create \
             --name hub-spoke-dev-${{ github.run_number }} \
-            --location eastus \
+            --location uksouth \
             --template-file infrastructure/main.bicep \
             --parameters infrastructure/parameters/dev.bicepparam
 
@@ -76,6 +88,9 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     environment: test
+    permissions:
+      id-token: write
+      contents: read
     if: github.event_name == 'workflow_dispatch' && inputs.environment == 'test'
     steps:
       - uses: actions/checkout@v4
@@ -91,7 +106,7 @@ jobs:
         run: |
           az deployment sub create \
             --name hub-spoke-test-${{ github.run_number }} \
-            --location eastus \
+            --location uksouth \
             --template-file infrastructure/main.bicep \
             --parameters infrastructure/parameters/test.bicepparam
 
@@ -101,6 +116,9 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     environment: prod
+    permissions:
+      id-token: write
+      contents: read
     if: github.event_name == 'workflow_dispatch' && inputs.environment == 'prod'
     steps:
       - uses: actions/checkout@v4
@@ -116,6 +134,6 @@ jobs:
         run: |
           az deployment sub create \
             --name hub-spoke-prod-${{ github.run_number }} \
-            --location eastus \
+            --location uksouth \
             --template-file infrastructure/main.bicep \
             --parameters infrastructure/parameters/prod.bicepparam
