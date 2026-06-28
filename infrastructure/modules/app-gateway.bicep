@@ -10,7 +10,8 @@ param namePrefix string
 param tags object
 param appGatewaySubnetId string
 param managedIdentityId string = ''        // user-assigned identity for KV cert access
-param keyVaultCertSecretUri string = ''    // set after bootstrap-ssl.sh; enables HTTPS
+@secure()
+param keyVaultCertSecretUri string = ''
 
 var appGwName     = 'agw-${namePrefix}-${environment}'
 var pipName       = 'pip-agw-${namePrefix}-${environment}'
@@ -19,7 +20,7 @@ var wafMode       = environment == 'prod' ? 'Prevention' : 'Detection'
 var capacity      = environment == 'prod' ? 2 : 1
 var httpsEnabled  = !empty(keyVaultCertSecretUri) && !empty(managedIdentityId)
 
-// ── Public IP ──────────────────────────────────────────────────────────────────
+// ── Public IP ──────────────────────────────────────────────────────
 resource publicIp 'Microsoft.Network/publicIPAddresses@2023-09-01' = {
   name: pipName
   location: location
@@ -31,7 +32,7 @@ resource publicIp 'Microsoft.Network/publicIPAddresses@2023-09-01' = {
   }
 }
 
-// ── WAF Policy (standalone — not the deprecated inline config) ──────────────────
+// ── WAF Policy (standalone — not the deprecated inline config) ──────────────
 resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies@2023-09-01' = {
   name: wafPolicyName
   location: location
@@ -70,7 +71,7 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
   }
 }
 
-// ── Conditional HTTPS building blocks ─────────────────────────────────────────────
+// ── Conditional HTTPS building blocks ───────────────────────────────────────────
 var extraFrontendPorts = httpsEnabled ? [
   { name: 'port-443', properties: { port: 443 } }
 ] : []
@@ -136,7 +137,7 @@ var httpsRoutingRules = httpsEnabled ? [
   }
 ] : []
 
-// ── App Gateway ───────────────────────────────────────────────────────────────────
+// ── App Gateway ───────────────────────────────────────────────────────────
 resource appGateway 'Microsoft.Network/applicationGateways@2023-09-01' = {
   name: appGwName
   location: location
