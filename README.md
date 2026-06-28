@@ -7,6 +7,18 @@
 
 ---
 
+## Documentation
+
+| Guide | Description |
+|---|---|
+| [Setup Guide](docs/setup-guide.md) | Install all tools on macOS, Ubuntu, or Windows — Azure CLI, Bicep, VS Code, Git, GitHub CLI |
+| [OIDC Setup](docs/oidc-setup.md) | Configure passwordless Azure authentication for GitHub Actions |
+| [Rebuild Dev Environment](docs/rebuild-dev.md) | Deploy or rebuild the `dev` environment via GitHub Actions or Azure CLI |
+| [Architecture](infrastructure/docs/architecture.md) | Network diagrams, subnet design, NSG rules |
+| [Cost Estimate](infrastructure/docs/cost-estimate.md) | Per-environment cost breakdown and optimisation tips |
+
+---
+
 ## What This Project Demonstrates
 
 This repository shows how to design, codify, and deploy a production-grade Azure network architecture using **Infrastructure as Code (IaC)**. Everything you see in Azure was created from code — no clicking through the portal.
