@@ -19,8 +19,14 @@ Screenshots taken from the live Azure environment before teardown.
 ### 5. VNet Peerings
 ![VNet peerings](screenshots/05-vnet-peerings.png)
 
+### 5a. Hub-to-Dev Peering Detail
+![Hub to dev peering](screenshots/peer-hub-to-dev.png)
+
 ### 6. App Gateway Overview (WAF v2)
 ![App Gateway overview](screenshots/06-app-gateway-overview.png)
+
+### 6a. App Gateway — dev (agw-contoso-dev)
+![App Gateway dev](screenshots/agw-contoso-dev.png)
 
 ### 7. WAF Policy (OWASP 3.2, Prevention mode)
 ![WAF policy](screenshots/07-app-gateway-waf.png)
@@ -34,11 +40,17 @@ Screenshots taken from the live Azure environment before teardown.
 ### 10. Azure Bastion
 ![Bastion](screenshots/10-bastion.png)
 
+### 10a. Hub VNet — dev (vnet-contoso-hub-dev)
+![Hub VNet dev](screenshots/vnet-contoso-hub-dev.png)
+
 ### 11. CI/CD Pipeline — full run (Validate → Dev → Test → Prod)
 ![CI/CD pipeline run](screenshots/11-cicd-pipeline-run.png)
 
-### 12. Prod Approval Gate
-![Prod approval gate](screenshots/12-cicd-approval-gate.png)
+### 11a. CI/CD Pipeline — run detail
+![CI/CD pipeline run detail](screenshots/11-cicd-pipeline-run02.png)
+
+### 12. Workflow
+![Workflow](screenshots/12-workflow.ping.png)
 
 ### 13. Cost Analysis by Resource Group
 ![Cost analysis](screenshots/13-cost-analysis.png)
