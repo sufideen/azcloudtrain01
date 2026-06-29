@@ -7,11 +7,11 @@ Screenshots taken from the live Azure environment before teardown.
 ### 1. All Resource Groups (9 total across dev / test / prod)
 ![All resource groups](screenshots/01-resource-groups-overview.png)
 
-### 2. Hub Resource Group — prod
-![Hub RG prod](screenshots/02-hub-rg-prod.png)
+### 2. Hub Resource Group — dev
+![Hub RG dev](screenshots/02-hub-rg-dev.png)
 
-### 3. Spoke Resource Group — prod
-![Spoke RG prod](screenshots/03-spoke-rg-prod.png)
+### 3. Spoke Resource Group — dev
+![Spoke RG dev](screenshots/03-spoke-rg-dev.png)
 
 ### 4. Network Topology (hub-spoke peering)
 ![Network topology](screenshots/04-network-topology.png)
