@@ -94,7 +94,7 @@ jobs:
         unzip -qq ./deploymenttemplates/ArmTemplates.zip -d .
 
     - name: Login to Azure
-      uses: azure/login@v1
+      uses: azure/login@v3
       continue-on-error: false
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
