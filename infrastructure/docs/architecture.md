@@ -155,6 +155,8 @@ Screenshots taken from the live Azure environment before teardown.
 
 ## CI/CD Pipeline
 
+> A separate `security-scan.yml` workflow runs Checkov, PSRule for Azure, Gitleaks and CodeQL on every PR and weekly. Deploy jobs use least-privilege `permissions` (`id-token: write` only per job). See the README's *Security Scope and Known Exceptions* section.
+
 ```
 PR / push to main
        │

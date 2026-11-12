@@ -7,3 +7,4 @@
 | [Rebuild Dev Environment](rebuild-dev.md) | Deploy or rebuild the `dev` environment via GitHub Actions or Azure CLI |
 | [Architecture](../infrastructure/docs/architecture.md) | Network diagrams, subnet design, NSG rules, CI/CD pipeline overview |
 | [Cost Estimate](../infrastructure/docs/cost-estimate.md) | Per-environment cost breakdown and cost optimisation tips |
+| [Security Scope](../README.md#security-scope-and-known-exceptions) | IaC scanning tools, what is deliberately out of scope, and documented exceptions |

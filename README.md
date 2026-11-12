@@ -29,6 +29,7 @@ This repository shows how to design, codify, and deploy a production-grade Azure
 | Security | NSGs with least-privilege rules, WAF v2, Bastion-only RDP/SSH, Key Vault-backed SSL |
 | IaC | Modular Azure Bicep templates (11 modules, subscription-scoped) |
 | CI/CD | GitHub Actions pipeline with OIDC (passwordless auth), environment gates |
+| DevSecOps | Checkov + PSRule IaC scanning, Gitleaks, CodeQL, Dependabot, least-privilege job permissions ([scope](#security-scope-and-known-exceptions)) |
 | Environments | Dev / Test / Prod with independent deployment gates and nightly dev teardown |
 
 ---
@@ -88,8 +89,10 @@ This repository shows how to design, codify, and deploy a production-grade Azure
 ```
 azcloudtrain01/
 ├── .github/
+│   ├── dependabot.yml                    # Weekly Actions + NuGet updates
 │   └── workflows/
 │       ├── deploy-infrastructure.yml     # CI/CD pipeline (Validate → dev → test → prod)
+│       ├── security-scan.yml             # Checkov, PSRule, Gitleaks, CodeQL (IaC security)
 │       └── teardown-infrastructure.yml   # Nightly dev teardown + manual env teardown
 ├── infrastructure/
 │   ├── main.bicep                        # Subscription-scoped orchestrator
@@ -112,6 +115,8 @@ azcloudtrain01/
 │   └── scripts/
 │       ├── bootstrap-oidc.sh             # One-time OIDC setup
 │       └── bootstrap-ssl.sh              # Generate + upload SSL cert to Key Vault
+├── .checkov.yaml                         # Checkov config + documented skips
+├── ps-rule.yaml                          # PSRule for Azure config
 └── README.md
 ```
 
@@ -127,6 +132,7 @@ The pipeline has four jobs. Each runs only when appropriate — there is no risk
 │  • bicep lint    │
 │  • what-if diff  │
 └────────┬─────────┘
+         │   (security-scan.yml runs alongside: Checkov, PSRule, Gitleaks, CodeQL)
          │
     ┌────▼────┐    Trigger: push to master  OR  dispatch environment=dev
     │  Deploy │
