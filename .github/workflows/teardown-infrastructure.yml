@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (for IaC source snapshot)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Azure Login (OIDC)
         uses: azure/login@v2
