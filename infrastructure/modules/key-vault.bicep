@@ -17,7 +17,11 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enabledForDeployment: true
     enabledForTemplateDeployment: true
     enabledForDiskEncryption: false
-    publicNetworkAccess: 'Enabled'
+    enableSoftDelete: true
+    softDeleteRetentionInDays: 90
+    // Purge protection intentionally NOT enabled: the vault name is deterministic per RG and dev is
+    // torn down nightly, so a purge-protected soft-deleted vault would block redeploy. See README security scope.
+    publicNetworkAccess: 'Enabled' // Accepted risk in this showcase; RBAC-only auth. Prod should use Private Endpoint.
   }
 }
 

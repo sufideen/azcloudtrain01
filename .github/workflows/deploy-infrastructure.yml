@@ -17,14 +17,16 @@ on:
         options: [dev, test, prod]
 
 permissions:
-  id-token: write   # OIDC login to Azure
-  contents: read
+  contents: read   # least privilege default; id-token granted per job below
 
 jobs:
   # ── Validate (runs on every PR and push) ──────────────────────────────────
   validate:
     name: Validate Bicep
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # OIDC login to Azure
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -51,6 +53,9 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     environment: dev
+    permissions:
+      id-token: write
+      contents: read
     if: github.ref == 'refs/heads/master' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
     steps:
       - uses: actions/checkout@v4
@@ -76,6 +81,9 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     environment: test
+    permissions:
+      id-token: write
+      contents: read
     if: github.event_name == 'workflow_dispatch' && inputs.environment == 'test'
     steps:
       - uses: actions/checkout@v4
@@ -101,6 +109,9 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     environment: prod
+    permissions:
+      id-token: write
+      contents: read
     if: github.event_name == 'workflow_dispatch' && inputs.environment == 'prod'
     steps:
       - uses: actions/checkout@v4

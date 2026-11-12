@@ -14,7 +14,7 @@ resource firewallPolicy 'Microsoft.Network/firewallPolicies@2023-11-01' = {
     sku: {
       tier: 'Standard'
     }
-    threatIntelMode: 'Alert'
+    threatIntelMode: 'Deny'
   }
 }
 
