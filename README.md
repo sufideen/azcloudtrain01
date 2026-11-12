@@ -114,7 +114,8 @@ azcloudtrain01/
 │   │   └── prod.bicepparam
 │   └── scripts/
 │       ├── bootstrap-oidc.sh             # One-time OIDC setup
-│       └── bootstrap-ssl.sh              # Generate + upload SSL cert to Key Vault
+│       ├── bootstrap-ssl.sh              # Generate self-signed cert + import to Key Vault
+│       └── teardown.sh                   # Local teardown script (mirrors the workflow)
 ├── .checkov.yaml                         # Checkov config + documented skips
 ├── ps-rule.yaml                          # PSRule for Azure config
 └── README.md

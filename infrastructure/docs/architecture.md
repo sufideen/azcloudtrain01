@@ -111,7 +111,7 @@ Screenshots taken from the live Azure environment before teardown.
 | Subnet | CIDR | Purpose |
 |---|---|---|
 | GatewaySubnet | 10.0.0.0/27 | VPN / ExpressRoute gateway |
-| AzureFirewallSubnet | 10.0.1.0/26 | Azure Firewall (future) |
+| AzureFirewallSubnet | 10.0.1.0/26 | Azure Firewall Standard (egress filtering via UDR) |
 | AppGatewaySubnet | 10.0.2.0/24 | App Gateway WAF v2 |
 | AzureBastionSubnet | 10.0.3.0/26 | Azure Bastion (jump host) |
 
