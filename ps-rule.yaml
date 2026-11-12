@@ -1,0 +1,13 @@
+# PSRule for Azure configuration
+configuration:
+  AZURE_BICEP_FILE_EXPANSION: true
+  AZURE_BICEP_PARAMS_FILE_EXPANSION: true
+  AZURE_BICEP_CHECK_TOOL: true
+input:
+  pathIgnore:
+    - 'Application/'
+    - 'ArmTemplates/'
+    - 'docs/'
+output:
+  format: Sarif
+  outputPath: reports/ps-rule-results.sarif

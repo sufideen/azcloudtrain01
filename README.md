@@ -323,6 +323,34 @@ All Phase 2 roadmap items have been designed, implemented in Bicep, and deployed
 
 ---
 
+## Security Scope and Known Exceptions
+
+**Scanning in this repo** (`.github/workflows/security-scan.yml`, results in the Security tab):
+
+| Tool | Scope | Mode |
+|---|---|---|
+| Checkov | Bicep IaC misconfigurations (`.checkov.yaml`) | Non-blocking baseline |
+| PSRule for Azure | Azure Well-Architected rules on Bicep + params (`ps-rule.yaml`) | Non-blocking baseline |
+| Gitleaks | Secrets in git history | Blocking |
+| CodeQL (C#) | SAST on the unmodified ASP.NET sample app | Informational |
+| Dependabot | GitHub Actions and NuGet updates | Weekly PRs |
+
+**Deliberately out of scope:** DAST. The environment is torn down nightly and the app is a stock Microsoft sample, so there is no meaningful runtime target. The focus of this repo is **infrastructure-level security**; application-layer security is covered in other repos in this portfolio.
+
+**Known exceptions (documented, not hidden):**
+
+| Check | Reason |
+|---|---|
+| Key Vault purge protection (CKV_AZURE_110/42) | Deterministic vault name plus nightly dev teardown means a purge-protected vault would block redeploy. Soft delete (90 days) is on. Enable in prod. |
+| Key Vault public access / firewall (CKV_AZURE_189/109) | Showcase vault, RBAC-only auth. Production design: Private Endpoint. |
+| Storage replication (CKV_AZURE_206) | LRS for dev/test to save cost; prod uses GRS. |
+| Storage naming (CKV_AZURE_43) | False positive; name meets the rules. |
+| Firewall threat intel (CKV_AZURE_216) | False positive; `Deny` is set on the Firewall Policy. |
+
+Pipeline hardening: least-privilege `permissions` per job (`id-token: write` only where OIDC login is needed).
+
+---
+
 ## Lessons Learned
 
 **Azure API deprecations surface at deploy time, not at lint time.**
