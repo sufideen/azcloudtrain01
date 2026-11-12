@@ -125,17 +125,26 @@ azcloudtrain01/
 
 ## The CI/CD Pipeline
 
-The pipeline has four jobs. Each runs only when appropriate — there is no risk of accidentally deploying to prod when fixing a dev bug.
+Two workflows run on every pull request and push: **deploy-infrastructure.yml** (validate and deploy) and **security-scan.yml** (IaC and code security). They run in parallel and neither blocks the other. Each deploy job runs only when appropriate, so there is no risk of accidentally deploying to prod when fixing a dev bug.
 
 ```
-┌──────────────────┐
-│  Validate Bicep  │  ← Runs on every push and pull request
-│  • bicep lint    │
-│  • what-if diff  │
-└────────┬─────────┘
-         │   (security-scan.yml runs alongside: Checkov, PSRule, Gitleaks, CodeQL)
-         │
-    ┌────▼────┐    Trigger: push to master  OR  dispatch environment=dev
+ Pull request / push to master
+          │
+          ├───────────────────────────────────────────────┐
+          │                                               │
+ deploy-infrastructure.yml                        security-scan.yml
+          │                                       (also runs weekly)
+┌─────────▼────────┐                     ┌──────────────────────────────┐
+│  Validate Bicep  │                     │  Checkov      Bicep IaC      │
+│  • bicep build   │                     │  PSRule       Azure WAF rules│
+│  • what-if diff  │                     │  Gitleaks     secrets scan   │
+└─────────┬────────┘                     │  CodeQL (C#)  SAST, sample   │
+          │                              └──────────────┬───────────────┘
+          │                                             │
+          │                                  SARIF → GitHub Security tab
+          │                              (non-blocking baseline, see Security Scope)
+          │
+    ┌─────▼───┐    Trigger: push to master  OR  dispatch environment=dev
     │  Deploy │
     │   dev   │
     └─────────┘
@@ -151,7 +160,7 @@ The pipeline has four jobs. Each runs only when appropriate — there is no risk
     └─────────┘
 ```
 
-Each environment is an independent dispatch — deploying test does not require dev to have just run, and deploying prod does not require test. Validation always runs first in every case.
+Each environment is an independent dispatch — deploying test does not require dev to have just run, and deploying prod does not require test. Validation always runs first in every case. The security scan is currently a **reporting gate, not a blocking gate**: Checkov and PSRule are in non-blocking mode while the baseline is established, so findings appear in the Security tab without stopping a deploy. Gitleaks is the exception and fails its job if it finds a secret, but it still doesn't stop the deploy workflow.
 
 ### Why OIDC Instead of a Client Secret?
 
