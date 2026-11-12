@@ -80,8 +80,8 @@ Screenshots taken from the live Azure environment before teardown.
               │       HUB VNet             │  10.0.0.0/16
               │  ┌──────────────────────┐  │
               │  │ AppGatewaySubnet     │  │  10.0.2.0/24
-              │  │ AzureFirewallSubnet  │  │  10.0.1.0/26
-              │  │ AzureBastionSubnet   │  │  10.0.3.0/26
+              │  │ AzureFirewallSubnet  │  │  10.0.1.0/26  egress via UDR
+              │  │ AzureBastionSubnet   │  │  10.0.3.0/26  admin SSH/RDP
               │  │ GatewaySubnet        │  │  10.0.0.0/27
               │  └──────────────────────┘  │
               └──────────┬─────────────────┘
@@ -101,7 +101,7 @@ Screenshots taken from the live Azure environment before teardown.
 
 | Resource Group | Contents |
 |---|---|
-| `rg-contoso-hub-<env>` | Hub VNet, App Gateway, WAF Policy, Public IP |
+| `rg-contoso-hub-<env>` | Hub VNet, App Gateway + WAF Policy, Azure Firewall + Policy, Bastion, Route Table, Key Vault, Public IPs |
 | `rg-contoso-spoke-<env>` | Spoke VNet, NSGs (Web/App/Data/Admin) |
 | `rg-contoso-storage-<env>` | Storage Account (Bicep artifacts + app data) |
 
@@ -155,26 +155,30 @@ Screenshots taken from the live Azure environment before teardown.
 
 ## CI/CD Pipeline
 
-> A separate `security-scan.yml` workflow runs Checkov, PSRule for Azure, Gitleaks and CodeQL on every PR and weekly. Deploy jobs use least-privilege `permissions` (`id-token: write` only per job). See the README's *Security Scope and Known Exceptions* section.
+Two workflows run on pull requests and pushes: `deploy-infrastructure.yml` (validate and deploy) and `security-scan.yml` (Checkov, PSRule for Azure, Gitleaks, CodeQL; also weekly). Deploy jobs use least-privilege `permissions` (`id-token: write` only where the OIDC login happens). See the README's *Security Scope and Known Exceptions* section.
 
 ```
-PR / push to main
-       │
-  ┌────▼────┐     bicep build + what-if
-  │ Validate │──────────────────────────►  fail fast, no Azure cost
-  └────┬────┘
-       │ (merge to main)
-  ┌────▼────┐
-  │ Dev     │──── auto deploy
-  └────┬────┘
-       │ (manual approval gate)
-  ┌────▼────┐
-  │ Test    │──── deploy
-  └────┬────┘
-       │ (manual approval gate)
-  ┌────▼────┐
-  │ Prod    │──── deploy
-  └─────────┘
+ PR or push to master (paths: infrastructure/**)          PR / push / weekly
+              │                                                   │
+      ┌───────▼────────┐                                ┌─────────▼──────────┐
+      │ Validate Bicep │  OIDC login                    │   security-scan    │
+      │ • bicep build  │  az bicep build                │ • Checkov (Bicep)  │
+      │ • what-if(dev) │  what-if preview, no changes   │ • PSRule for Azure │
+      └───────┬────────┘                                │ • Gitleaks         │
+              │ needs: validate                         │ • CodeQL (C#)      │
+              │                                         └─────────┬──────────┘
+              │                                         SARIF → GitHub Security tab
+   ┌──────────┼──────────────────────┬─────────────────────────┐
+   │          │                      │                         │
+┌──▼───────┐  │  ┌───────────────────▼──┐   ┌──────────────────▼───┐
+│ Deploy   │  │  │ Deploy test          │   │ Deploy prod          │
+│ dev      │  │  │ manual dispatch only │   │ manual dispatch only │
+│ auto on  │  │  │ environment=test     │   │ environment=prod     │
+│ master   │  │  │ approval gate        │   │ approval gate        │
+│ push, or │  │  └──────────────────────┘   └──────────────────────┘
+│ dispatch │  │
+└──────────┘  └─ each deploy job depends only on Validate,
+                 not on the previous environment
 ```
 
 ## Prerequisites for CI/CD
